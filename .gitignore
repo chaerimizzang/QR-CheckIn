@@ -1,0 +1,26 @@
+# Gradle / Java
+backend/.gradle/
+backend/build/
+backend/out/
+*.class
+
+# 로컬 H2 DB
+backend/data/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Node (frontend)
+node_modules/
+frontend/dist/
+
+# 비밀 값
+.env
+*.env
+application-secret.yml
+
+# OS
+.DS_Store
+Thumbs.db

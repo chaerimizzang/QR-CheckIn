@@ -1,0 +1,66 @@
+# 기본 프로필(local): H2 파일 DB(MySQL 호환 모드) — MySQL 설치 없이 바로 실행
+# MySQL로 실행: --spring.profiles.active=mysql
+spring:
+  application:
+    name: qr-checkin
+  profiles:
+    default: local
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    time-zone: Asia/Seoul
+
+server:
+  port: 8080
+
+app:
+  timezone: Asia/Seoul
+  jwt:
+    # 32바이트 이상. 운영에서는 반드시 환경 변수 JWT_SECRET 로 교체
+    secret: ${JWT_SECRET:local-dev-jwt-secret-change-me-0123456789abcdef}
+    expiration-hours: 24
+  qr:
+    # QR 서명 비밀키 — 저장소에 올리지 말고 환경 변수 QR_SECRET 로 관리
+    secret: ${QR_SECRET:local-dev-qr-secret-change-me-0123456789abcdef}
+    refresh-seconds: 15
+    allowed-past-windows: 1
+  checkin:
+    default-minutes: 5
+    max-accuracy-m: 100
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:file:./data/qrcheckin;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+---
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USER:qrcheckin}
+    password: ${DB_PASSWORD:}
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect

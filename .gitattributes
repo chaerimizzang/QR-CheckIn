@@ -1,0 +1,10 @@
+* text=auto
+
+# 리눅스 서버에서 실행되도록 gradlew는 항상 LF
+backend/gradlew text eol=lf
+*.sh text eol=lf
+
+# Windows 배치 파일은 CRLF
+*.bat text eol=crlf
+
+*.jar binary
