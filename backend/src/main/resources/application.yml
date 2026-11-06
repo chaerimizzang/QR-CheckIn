@@ -32,12 +32,17 @@ app:
   checkin:
     default-minutes: 5
     max-accuracy-m: 100
+    close-check-ms: 60000
+  # QR 에 담기는 출석 URL 의 앞부분(프론트엔드 주소). 배포 시 https 도메인으로 교체
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
 
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    # 새로고침·서버 재시작 후에도 [Authorize]에 넣은 토큰 유지(브라우저 localStorage)
+    persist-authorization: true
 
 ---
 spring:

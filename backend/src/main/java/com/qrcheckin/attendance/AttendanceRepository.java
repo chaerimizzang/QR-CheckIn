@@ -13,6 +13,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     void deleteBySessionId(Long sessionId);
 
+    long countBySessionIdAndStatus(Long sessionId, AttendanceStatus status);
+
     void deleteBySessionCourseId(Long courseId);
 
     void deleteBySessionCourseIdAndUserId(Long courseId, Long userId);

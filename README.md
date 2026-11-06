@@ -19,10 +19,11 @@ docs/       일정·설계 메모
 |---|---|---|
 | — | 프로젝트 뼈대, 엔티티 5개(users, course, enrollment, class_session, attendance), 공통 오류 형식 | ✅ |
 | B-01 | 회원가입·로그인(JWT), 역할 구분 | ✅ |
-| B-06/B-07 핵심 로직 | QR 토큰 HMAC 발급·검증, 하버사인 거리·정확도 판정 + 단위 테스트 | ✅ (API 연결은 2주차) |
+| B-06/B-07 핵심 로직 | QR 토큰 HMAC 발급·검증, 하버사인 거리·정확도 판정 + 단위 테스트 | ✅ |
 | B-02 ~ B-05 | 교육·회차·수강생·출석 조건 API | ✅ |
-| B-06 ~ B-09 | QR 표시, 출석 인증, 자동 결석, 오류 안내 | ⬜ |
-| B-10 ~ B-12 | 조회·출결 수정 | ⬜ |
+| B-06 ~ B-09 | 출석 시작·종료·QR 발급, 출석 인증, 자동 결석, 오류 안내 (API) | ✅ |
+| B-10 ~ B-12 | 내 출결, 회차 현황, 관리자 출결 수정 (API) | ✅ |
+| 화면 | React 관리자·수강생 화면 | ⬜ |
 
 ## 백엔드 실행
 
@@ -77,6 +78,15 @@ DB_PASSWORD=비밀번호 ./gradlew bootRun --args='--spring.profiles.active=mysq
 | DELETE | `/courses/{courseId}/enrollments/{userId}` | 수강생 삭제 | 소유 관리자 |
 | GET / POST | `/courses/{courseId}/sessions` | 회차 목록 · 회차 등록(출석 조건 포함) | 소유 관리자 |
 | GET / PUT / DELETE | `/sessions/{sessionId}` | 회차 조회 · 출석 조건 수정 · 삭제 (SCHEDULED 일 때만 수정·삭제) | 소유 관리자 |
+| POST | `/sessions/{sessionId}/open` | 출석 시작 (장소 필수, QR 출석 시간 뒤 자동 마감) | 소유 관리자 |
+| POST | `/sessions/{sessionId}/close` | 출석 종료 (미출석자 즉시 결석 처리) | 소유 관리자 |
+| GET | `/sessions/{sessionId}/qr` | 현재 QR 토큰·URL·남은 시간·출석 인원 | 소유 관리자 |
+| GET | `/sessions/{sessionId}/attendances` | 회차 명단·상태·요약(출석/지각/결석/미정) | 소유 관리자 |
+| PUT | `/sessions/{sessionId}/attendances/{userId}` | 출결 수정 `{"status":"LATE"}` — 언제든, 기록이 없으면 새로 생성 | 소유 관리자 |
+| GET | `/me/attendances?courseId=` | 내 출결(회차별) | 수강생 |
+| POST | `/check-in` | 출석 인증 (`token`, `latitude`, `longitude`, `accuracy`) | 수강생 |
+
+출석 인증 실패 시 `code`는 계획서 4.4 오류 코드(QR_INVALID, QR_EXPIRED, NOT_ENROLLED, SESSION_NOT_OPEN, SESSION_CLOSED, LOW_ACCURACY, OUT_OF_RANGE, ALREADY_CHECKED)이고, `detail.hint`에 재시도 방법이 들어갑니다.
 
 ```bash
 curl -X POST localhost:8080/api/v1/auth/signup -H "Content-Type: application/json" \
