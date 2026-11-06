@@ -24,3 +24,6 @@ application-secret.yml
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude 데스크톱 앱이 받은 파일을 저장하는 폴더
+Claude outputs/

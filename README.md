@@ -9,7 +9,7 @@
 
 ```
 backend/    Spring Boot 3.5 (Java 17+), JPA, Spring Security + JWT
-frontend/   React + Vite (예정)
+frontend/   React + Vite 화면 소스 (빌드 결과는 backend/src/main/resources/static 에 들어감)
 docs/       일정·설계 메모
 ```
 
@@ -23,7 +23,33 @@ docs/       일정·설계 메모
 | B-02 ~ B-05 | 교육·회차·수강생·출석 조건 API | ✅ |
 | B-06 ~ B-09 | 출석 시작·종료·QR 발급, 출석 인증, 자동 결석, 오류 안내 (API) | ✅ |
 | B-10 ~ B-12 | 내 출결, 회차 현황, 관리자 출결 수정 (API) | ✅ |
-| 화면 | React 관리자·수강생 화면 | ⬜ |
+| 화면 | 로그인·회원가입, 관리자(교육·회차·QR·현황), 수강생(홈·스캔·출석 결과·내 출결) | ✅ |
+
+## 화면 사용
+
+서버(`backend bootRun`)를 켜고 **http://localhost:8080** 에 접속하면 됩니다. Swagger 없이 회원가입부터 QR 출석까지 모두 화면에서 할 수 있어요.
+화면은 빌드된 상태로 Spring Boot 가 함께 제공하므로 Node.js 설치가 필요 없습니다.
+
+### 휴대폰으로 테스트 (HTTPS 터널)
+
+휴대폰의 카메라·위치 기능은 **https** 에서만 동작합니다. Cloudflare 터널로 내 PC 의 8080 을 임시 https 주소로 엽니다(계정 불필요).
+
+```powershell
+winget install --id Cloudflare.cloudflared     # 처음 한 번
+cloudflared tunnel --url http://localhost:8080
+```
+
+출력에 나오는 `https://xxxx.trycloudflare.com` 주소를 PC 와 휴대폰에서 모두 열어 사용합니다.
+QR 은 지금 접속한 주소로 만들어지므로, **관리자 QR 화면도 이 https 주소로 열어야** 휴대폰에서 찍었을 때 연결됩니다.
+
+### 화면 코드를 고칠 때 (Node.js 필요)
+
+```bash
+cd frontend
+npm install
+npm run dev      # http://localhost:5173 (API 는 8080 으로 자동 전달)
+npm run build    # 결과를 backend/src/main/resources/static 에 덮어씀
+```
 
 ## 백엔드 실행
 

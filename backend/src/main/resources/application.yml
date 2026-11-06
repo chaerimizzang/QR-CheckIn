@@ -14,9 +14,17 @@ spring:
         format_sql: true
   jackson:
     time-zone: Asia/Seoul
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          # 화면 파일 이름이 고정이라, 브라우저가 매번 바뀌었는지 확인하게 한다(안 바뀌었으면 304)
+          no-cache: true
 
 server:
   port: 8080
+  # cloudflared·Nginx 같은 프록시 뒤에서 원래 주소(https://...)를 알 수 있게 X-Forwarded-* 헤더를 신뢰
+  forward-headers-strategy: framework
 
 app:
   timezone: Asia/Seoul
@@ -33,10 +41,11 @@ app:
     default-minutes: 5
     max-accuracy-m: 100
     close-check-ms: 60000
-  # QR 에 담기는 출석 URL 의 앞부분(프론트엔드 주소). 배포 시 https 도메인으로 교체
-  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  # QR 에 담기는 출석 URL 의 앞부분(GET /qr 응답의 url). 화면은 지금 접속한 주소로 QR 을 직접 만든다
+  frontend-url: ${FRONTEND_URL:http://localhost:8080}
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+    # 다른 주소에서 API 를 부를 때 허용할 출처(패턴). 화면과 API 가 같은 주소면 필요 없음
+    allowed-origins: ${CORS_ORIGINS:http://localhost:*,https://*.trycloudflare.com}
 
 springdoc:
   swagger-ui:
