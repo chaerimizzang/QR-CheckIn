@@ -37,4 +37,6 @@ public final class AttendanceDtos {
 
     public record MyAttendanceResponse(Long courseId, String courseTitle, List<MyRow> sessions) {
     }
+    public record AttendanceHistoryRow(Long id, AttendanceStatus oldStatus, AttendanceStatus newStatus,String modifiedByName, LocalDateTime modifiedAt) {
+}
 }

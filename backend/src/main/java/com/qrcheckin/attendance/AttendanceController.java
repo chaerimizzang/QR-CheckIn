@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.qrcheckin.attendance.AttendanceDtos.ChangeStatusRequest;
+import com.qrcheckin.attendance.AttendanceDtos.AttendanceHistoryRow;
+import java.util.List;
 import com.qrcheckin.attendance.AttendanceDtos.MyAttendanceResponse;
 import com.qrcheckin.attendance.AttendanceDtos.RosterResponse;
 import com.qrcheckin.attendance.AttendanceDtos.RosterRow;
@@ -33,6 +35,12 @@ public class AttendanceController {
     @PreAuthorize("hasRole('ADMIN')")
     public RosterResponse roster(@PathVariable Long sessionId, @AuthenticationPrincipal AuthUser user) {
         return attendanceService.roster(sessionId, user);
+    }
+    
+    @GetMapping("/sessions/{sessionId}/attendances/{userId}/history")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<AttendanceHistoryRow> history(@PathVariable Long sessionId, @PathVariable Long userId, @AuthenticationPrincipal AuthUser user) {
+        return attendanceService.getAttendanceHistory(sessionId, userId, user);
     }
 
     /**
