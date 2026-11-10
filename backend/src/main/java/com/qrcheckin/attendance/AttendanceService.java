@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.qrcheckin.attendance.AttendanceDtos.MyAttendanceResponse;
 import com.qrcheckin.attendance.AttendanceDtos.MyRow;
 import com.qrcheckin.attendance.AttendanceDtos.RosterResponse;
+import com.qrcheckin.attendance.AttendanceDtos.AttendanceHistoryRow;
 import com.qrcheckin.attendance.AttendanceDtos.RosterRow;
 import com.qrcheckin.attendance.AttendanceDtos.Summary;
 import com.qrcheckin.auth.AuthUser;
@@ -27,6 +28,7 @@ import com.qrcheckin.session.ClassSession;
 import com.qrcheckin.session.ClassSessionRepository;
 import com.qrcheckin.session.SessionService;
 import com.qrcheckin.user.User;
+import com.qrcheckin.user.UserRepository;
 
 /** B-10 본인 출결, B-11 회차 현황, B-12 관리자 출결 수정 */
 @Service
@@ -37,16 +39,21 @@ public class AttendanceService {
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final AttendanceRepository attendanceRepository;
+    private final AttendanceHistoryRepository attendanceHistoryRepository;
+    private final UserRepository userRepository;
     private final Clock clock;
 
     public AttendanceService(SessionService sessionService, ClassSessionRepository sessionRepository,
                              CourseRepository courseRepository, EnrollmentRepository enrollmentRepository,
-                             AttendanceRepository attendanceRepository, Clock clock) {
+                             AttendanceRepository attendanceRepository, AttendanceHistoryRepository attendanceHistoryRepository,
+                             UserRepository userRepository, Clock clock) {
         this.sessionService = sessionService;
         this.sessionRepository = sessionRepository;
         this.courseRepository = courseRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.attendanceRepository = attendanceRepository;
+        this.attendanceHistoryRepository = attendanceHistoryRepository;
+        this.userRepository = userRepository;
         this.clock = clock;
     }
 
@@ -89,19 +96,61 @@ public class AttendanceService {
         Enrollment enrollment = enrollmentRepository.findByCourseIdAndUserId(session.getCourse().getId(), userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "이 교육의 수강생이 아니에요"));
         LocalDateTime now = LocalDateTime.now(clock);
-
+        
+        //Find the existing attendance record
         Attendance attendance = attendanceRepository.findBySessionIdAndUserId(sessionId, userId)
-                .map(a -> {
-                    a.changeByAdmin(status, now);
-                    return a;
-                })
-                .orElseGet(() -> attendanceRepository.save(
-                        Attendance.manual(session, enrollment.getUser(), status, now)));
+            .orElse(null);
+        AttendanceStatus oldStatus;
+        boolean statusChanged;
 
-        User u = enrollment.getUser();
+        if (attendance == null) {
+        oldStatus = null; //No previous record->create a new one
+        attendance = attendanceRepository.save(
+                Attendance.manual(session, enrollment.getUser(), status, now));
+        statusChanged = true;
+
+        } else {
+        oldStatus = attendance.getStatus(); //Remember the previous status
+        statusChanged = oldStatus != status; //Update only if the status is different
+
+        if (statusChanged) {
+            attendance.changeByAdmin(status, now);}
+        }
+
+        if (statusChanged) { //Saving the modification history
+                User adminUser = userRepository.findById(admin.id()).orElseThrow(() -> new ApiException(
+                        ErrorCode.NOT_FOUND, "관리자를 찾을 수 없습니다"));
+
+        AttendanceHistory history = new AttendanceHistory(attendance, adminUser, oldStatus, status, now);
+        attendanceHistoryRepository.save(history);
+        }
+        User u = enrollment.getUser();  //Returningthe updated attendance information
+
         return new RosterRow(u.getId(), u.getName(), u.getStudentNo(), u.getEmail(), attendance.getId(),
-                attendance.getStatus(), attendance.getCheckedAt(), attendance.getSource());
-    }
+            attendance.getStatus(), attendance.getCheckedAt(), attendance.getSource());
+        }
+
+        @Transactional(readOnly = true)
+        public List<AttendanceHistoryRow> getAttendanceHistory(Long sessionId, Long userId, AuthUser admin) {
+        ClassSession session = sessionService.getOwnedSession(sessionId, admin); //Checking administrator's access to the session
+        enrollmentRepository.findByCourseIdAndUserId(// Check student enrollment
+            session.getCourse().getId(), userId ).orElseThrow(() -> new ApiException(
+            ErrorCode.NOT_FOUND, "이 교육의 수강생이 아니에요"));
+        
+        Attendance attendance = attendanceRepository .findBySessionIdAndUserId(sessionId, userId)
+            .orElse(null); //Finding attendance record
+
+        if (attendance == null) {
+                return List.of();
+        }
+
+        //Returning history, newest first
+         return attendanceHistoryRepository.findByAttendanceIdOrderByModifiedAtDesc(attendance.getId())
+            .stream().map(history -> new AttendanceHistoryRow(history.getId(),history.getOldStatus(),history.getNewStatus(),
+                    history.getModifiedBy().getName(),history.getModifiedAt()))
+            .toList();
+        }
+
 
     /** B-10: 교육의 모든 회차를 회차 순서대로, 본인 출결과 함께 */
     @Transactional(readOnly = true)

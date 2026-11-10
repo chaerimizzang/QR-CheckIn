@@ -11,6 +11,8 @@ export default function SessionDetail() {
   const [s, setS] = useState(null)
   const [roster, setRoster] = useState(null)
   const [form, setForm] = useState(null)
+  const [history, setHistory] = useState({})
+  const [historyOpen, setHistoryOpen] = useState(null)
   const [locating, setLocating] = useState(null) // null | 측정 중 최고 정확도(m) | true
   const [accuracy, setAccuracy] = useState(null)
   const [error, setError] = useState(null)
@@ -94,6 +96,17 @@ export default function SessionDetail() {
       await put(`/sessions/${sessionId}/attendances/${userId}`, { status })
       await loadRoster()
     } catch (err) { setError(err) }
+  }
+
+  async function loadHistory(userId) {
+    setError(null)
+    try {
+      const data = await get( `/sessions/${sessionId}/attendances/${userId}/history` )
+      setHistory((prev) => ({ ...prev, [userId]: data }))
+      setHistoryOpen(userId)
+    } catch (err) {
+      setError(err)
+    }
   }
 
   if (!s || !form) return <Layout><ErrorBox error={error} /><Loading /></Layout>
@@ -226,6 +239,39 @@ export default function SessionDetail() {
                         {r.source === 'SYSTEM' && ' · 자동'}
                       </div>
                     </div>
+                    
+                    <button
+                    className="btn btn-sm"
+                    onClick={() => loadHistory(r.userId)}>수정 이력
+                    </button>
+
+                    {historyOpen === r.userId && (
+                      <div className="small">
+                        <strong>출결 수정 이력</strong>
+
+                        {!history[r.userId]?.length ? (
+                          <p>수정 이력이 없습니다.</p>
+                        ) : (
+                          history[r.userId].map((item) => (
+                            <div key={item.id}>
+                              {item.oldStatus || '미정'} → {item.newStatus}
+                              {' · '}
+                              {item.modifiedByName}
+                              {' · '}
+                              {fmtTime(item.modifiedAt)}
+                            </div>
+                          ))
+                        )}
+
+    <button
+      className="link-btn"
+      onClick={() => setHistoryOpen(null)}
+    >
+      닫기
+    </button>
+  </div>
+)}
+
                     <div className="seg-sm">
                       {['PRESENT', 'LATE', 'ABSENT'].map((st) => (
                         <button key={st} className={r.status === st ? `on ${st.toLowerCase()}` : ''}
