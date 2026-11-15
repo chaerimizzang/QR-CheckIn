@@ -6,6 +6,7 @@ import java.util.List;
 import com.qrcheckin.session.SessionStatus;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 
 public final class AttendanceDtos {
 
@@ -28,6 +29,10 @@ public final class AttendanceDtos {
 
     /** B-12 관리자 출결 수정 */
     public record ChangeStatusRequest(@NotNull AttendanceStatus status) {
+    }
+    public record BulkChangeStatusRequest(
+        @NotEmpty List<Long> userIds,
+        @NotNull AttendanceStatus status) {
     }
 
     /** B-10 본인 출결: 회차마다 한 줄. 출결이 아직 정해지지 않은 회차는 status 가 null */

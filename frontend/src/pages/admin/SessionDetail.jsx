@@ -13,6 +13,9 @@ export default function SessionDetail() {
   const [form, setForm] = useState(null)
   const [history, setHistory] = useState({})
   const [historyOpen, setHistoryOpen] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedIds, setSelectedIds] = useState([])
+  const [bulkStatus, setBulkStatus] = useState('PRESENT')
   const [locating, setLocating] = useState(null) // null | 측정 중 최고 정확도(m) | true
   const [accuracy, setAccuracy] = useState(null)
   const [error, setError] = useState(null)
@@ -98,6 +101,32 @@ export default function SessionDetail() {
     } catch (err) { setError(err) }
   }
 
+  function toggleStudent(userId) {
+    setSelectedIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    )
+  }
+
+  async function bulkChange() {
+    if (selectedIds.length === 0) {
+      setNotice('학생을 먼저 선택해 주세요.')
+      return
+    }
+
+    setError(null)
+    setNotice(null)
+
+    try {
+      await put(`/sessions/${sessionId}/attendances/bulk`, {userIds: selectedIds, status: bulkStatus,
+    })
+
+    setSelectedIds([])
+    await loadRoster()
+    setNotice('선택한 학생의 출결을 변경했어요')
+    } catch (err) {
+      setError(err)
+    }
+  }
   async function loadHistory(userId) {
     setError(null)
     try {
@@ -116,6 +145,11 @@ export default function SessionDetail() {
     Number(form.radiusM) !== s.radiusM || Number(form.checkinMinutes) !== s.checkinMinutes ||
     form.scheduledAt !== s.scheduledAt.slice(0, 16)
   const hasLocation = s.latitude != null
+
+  const filteredStudents = roster?.students.filter((student) => {
+  const keyword = searchTerm.trim().toLowerCase()
+  return (student.name.toLowerCase().includes(keyword) || student.studentNo.toLowerCase().includes(keyword))
+  }) ?? []
 
   return (
     <Layout back={`/admin/courses/${s.courseId}`} title={<>{s.sessionNo}회차 <SessionBadge status={s.status} /></>}>
@@ -226,10 +260,55 @@ export default function SessionDetail() {
               <span>미정 <b>{roster.summary.pending}</b></span>
               <span className="muted">/ 전체 {roster.summary.enrolled}명</span>
             </div>
-            {roster.students.length === 0 ? <div className="empty">수강생이 없어요. 교육 화면에서 추가해 주세요.</div> : (
+            {/* 학생 검색 */}
+            <div className="field" style={{ marginTop: 16 }}>
+              <label htmlFor="studentSearch">학생 검색</label>
+              <input
+                id="studentSearch"
+                type="text"
+                placeholder="이름 또는 학번을 입력하세요"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* 일괄 출결 처리 */}
+            <div className="card" style={{ marginTop: 12 }}>
+              <strong>일괄 출결 처리</strong>
+            <div className="small muted">
+              선택한 학생 {selectedIds.length}명
+            </div>
+
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value)}
+            >
+              <option value="PRESENT">출석</option>
+              <option value="LATE">지각</option>
+              <option value="ABSENT">결석</option>
+            </select>
+
+            <button
+              className="btn btn-primary"
+              onClick={bulkChange}
+              disabled={selectedIds.length === 0}
+            style={{ marginTop: 8 }}
+            >
+              선택 학생 출결 변경
+            </button>
+          </div>
+
+            {roster.students.length === 0 ? (<div className="empty">수강생이 없어요. 교육 화면에서 추가해 주세요.</div>) : filteredStudents.length === 0 ? (
+              <div className="empty">검색 결과가 없습니다</div>) :(
               <div className="roster">
-                {roster.students.map((r) => (
+                {filteredStudents.map((r) => (
                   <div key={r.userId} className="roster-row">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(r.userId)}
+                      onChange={() => toggleStudent(r.userId)}
+                      style={{ width: 18, height: 18 }}
+                    />
                     <div className="roster-who">
                       <div>{r.name} <span className="muted small">{r.studentNo}</span></div>
                       <div className="small muted">
