@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { post } from '../api'
 import { Layout } from '../components/ui'
-import { STATUS_LABEL, fmtTime, getPosition } from '../util'
+import { STATUS_LABEL, fmtTime, getDeviceId, getPosition } from '../util'
 
 /**
  * QR 에 담긴 주소(/check-in?t=토큰). 열리자마자 위치를 받아 출석 인증을 보낸다(B-07).
@@ -31,7 +31,7 @@ export default function CheckIn() {
       // 스캔부터 결과까지 10초 이내(N-01)를 위해 최대 6초, 50m 이내가 나오면 바로 보낸다
       const pos = await getPosition({ targetAccuracy: 50, maxWaitMs: 6000, onProgress: setAcc })
       setStep('sending')
-      const res = await post('/check-in', { token, ...pos })
+      const res = await post('/check-in', { token, ...pos, deviceId: getDeviceId() })
       setResult(res)
       setStep('done')
     } catch (err) {

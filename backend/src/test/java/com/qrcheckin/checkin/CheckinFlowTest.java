@@ -186,9 +186,65 @@ class CheckinFlowTest {
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("SESSION_NOT_EDITABLE"));
     }
 
+    /** D-12 대리 출석 방지: 같은 회차에 한 휴대폰으로는 한 명만 출석 */
+    @Test
+    void 같은_기기로_다른_학생_출석_차단() throws Exception {
+        String prof = signupAndLogin("dprof@t.com", "ADMIN");
+        String kim = signupAndLogin("dkim@t.com", "STUDENT");
+        String lee = signupAndLogin("dlee@t.com", "STUDENT");
+        long courseId = idOf(call(post("/api/v1/courses"), prof, "{\"title\":\"운영체제\"}"));
+        call(post("/api/v1/courses/" + courseId + "/enrollments"), prof, "{\"email\":\"dkim@t.com\"}");
+        call(post("/api/v1/courses/" + courseId + "/enrollments"), prof, "{\"email\":\"dlee@t.com\"}");
+        long s1 = idOf(call(post("/api/v1/courses/" + courseId + "/sessions"), prof,
+                "{\"scheduledAt\":\"2026-11-10T13:00:00\"," + ROOM + "}"));
+        long s2 = idOf(call(post("/api/v1/courses/" + courseId + "/sessions"), prof,
+                "{\"scheduledAt\":\"2026-11-17T13:00:00\"," + ROOM + "}"));
+        String kimPhone = "phone-kim-0001";
+
+        call(post("/api/v1/sessions/" + s1 + "/open"), prof, null).andExpect(status().isOk());
+        clock.advance(Duration.ofSeconds(2));
+        String qr = qrToken(prof, s1);
+
+        // 기기 정보가 없거나 형식이 이상하면 400
+        checkIn(kim, qr, "37.5665", "126.978", 20, null).andExpect(status().isBadRequest());
+        checkIn(kim, qr, "37.5665", "126.978", 20, "x<script>").andExpect(status().isBadRequest());
+
+        // kim 이 자기 폰으로 출석
+        checkIn(kim, qr, "37.5665", "126.978", 20, kimPhone).andExpect(status().isOk());
+        // lee 가 kim 의 폰으로 로그인해 출석 → 차단, 안내 문구 포함
+        checkIn(lee, qr, "37.5665", "126.978", 20, kimPhone)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("DEVICE_ALREADY_USED"))
+                .andExpect(jsonPath("$.detail.hint").exists());
+        // kim 이 같은 폰으로 다시 찍으면 '이미 출석'(기기 중복보다 본인 중복 안내가 먼저)
+        checkIn(kim, qr, "37.5665", "126.978", 20, kimPhone)
+                .andExpect(jsonPath("$.code").value("ALREADY_CHECKED"));
+        // lee 는 자기 폰으로는 출석 가능
+        checkIn(lee, qr, "37.5665", "126.978", 20, "phone-lee-0002").andExpect(status().isOk());
+
+        // 다른 회차에서는 같은 폰을 다른 사람이 써도 된다(예: 폰을 바꾼 경우)
+        call(post("/api/v1/sessions/" + s1 + "/close"), prof, null).andExpect(status().isOk());
+        clock.set(START.plus(Duration.ofDays(7)));
+        call(post("/api/v1/sessions/" + s2 + "/open"), prof, null).andExpect(status().isOk());
+        clock.advance(Duration.ofSeconds(2));
+        checkIn(lee, qrToken(prof, s2), "37.5665", "126.978", 20, kimPhone).andExpect(status().isOk());
+
+        Attendance kimRecord = attendanceRepository.findAll().stream()
+                .filter(a -> kimPhone.equals(a.getDeviceId()) && a.getSession().getId() == s1)
+                .findFirst().orElseThrow();
+        assertThat(kimRecord.getSource()).isEqualTo(AttendanceSource.QR);
+    }
+
+    /** 학생마다 자기 휴대폰을 쓴다고 보고, 로그인 토큰으로 기기 번호를 만든다 */
     private ResultActions checkIn(String token, String qr, String lat, String lon, int accuracy) throws Exception {
+        return checkIn(token, qr, lat, lon, accuracy, String.format("dev-%08x", token.hashCode()));
+    }
+
+    private ResultActions checkIn(String token, String qr, String lat, String lon, int accuracy, String deviceId)
+            throws Exception {
+        String device = deviceId == null ? "" : ",\"deviceId\":\"" + deviceId + "\"";
         return call(post("/api/v1/check-in"), token, "{\"token\":\"" + qr + "\",\"latitude\":" + lat
-                + ",\"longitude\":" + lon + ",\"accuracy\":" + accuracy + "}");
+                + ",\"longitude\":" + lon + ",\"accuracy\":" + accuracy + device + "}");
     }
 
     private String qrToken(String prof, long sessionId) throws Exception {

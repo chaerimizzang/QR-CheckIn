@@ -87,7 +87,7 @@ class AttendanceManageTest {
         String token = om.readTree(call(get("/api/v1/sessions/" + s1 + "/qr"), prof, null)
                 .andReturn().getResponse().getContentAsString()).get("token").asText();
         call(post("/api/v1/check-in"), kim, "{\"token\":\"" + token
-                + "\",\"latitude\":37.5665,\"longitude\":126.978,\"accuracy\":15}")
+                + "\",\"latitude\":37.5665,\"longitude\":126.978,\"accuracy\":15,\"deviceId\":\"phone-kim-0001\"}")
                 .andExpect(status().isOk());
 
         // 13:05 마감 → lee 자동 결석

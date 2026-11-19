@@ -31,7 +31,7 @@ import com.qrcheckin.user.UserRepository;
 /**
  * B-07 출석 인증 + B-09 오류 안내. 판정은 전부 서버 시각으로 한다(계획서 4장).
  *
- * 검사 순서: ① 토큰 형식·서명 → ② 수강 자격 → ③ 출석 시간 → ④ 토큰 만료 → ⑤ 위치 → ⑥ 중복
+ * 검사 순서: ① 토큰 형식·서명 → ② 수강 자격 → ③ 출석 시간 → ④ 토큰 만료 → ⑤ 위치 → ⑥ 중복 → ⑦ 기기 중복(D-12)
  * (위조 가능성이 큰 토큰을 먼저, 오차가 가장 큰 위치를 뒤에. 마감 후에는 '만료'보다 '마감'이 정확한 안내라 ③을 ④보다 앞에 둔다)
  */
 @Service
@@ -47,7 +47,8 @@ public class CheckinService {
             ErrorCode.SESSION_NOT_OPEN, "안내된 출석 시간에 다시 시도해 주세요",
             ErrorCode.SESSION_CLOSED, "교수님(관리자)께 직접 말씀드려 지각 처리를 요청해 주세요",
             ErrorCode.LOW_ACCURACY, "휴대폰의 '정확한 위치'를 켜고 창가로 이동한 뒤 다시 시도해 주세요",
-            ErrorCode.OUT_OF_RANGE, "강의실 안에서 다시 시도해 주세요");
+            ErrorCode.OUT_OF_RANGE, "강의실 안에서 다시 시도해 주세요",
+            ErrorCode.DEVICE_ALREADY_USED, "본인 휴대폰으로 출석해 주세요. 휴대폰을 빌린 경우 교수님(관리자)께 말씀드려 주세요");
 
     private final QrTokenService qrTokenService;
     private final ClassSessionRepository sessionRepository;
@@ -125,12 +126,24 @@ public class CheckinService {
         // ⑥ 중복 — UNIQUE(session_id, user_id) 가 최종 방어선
         attendanceRepository.findBySessionIdAndUserId(session.getId(), student.id())
                 .ifPresent(a -> { throw alreadyChecked(a); });
+
+        // ⑦ 기기 중복(D-12) — 같은 회차에 이 휴대폰으로 이미 다른 학생이 출석했으면 대리 출석으로 보고 막는다.
+        //    UNIQUE(session_id, device_id) 가 최종 방어선
+        String deviceId = req.deviceId().trim();
+        if (attendanceRepository.findFirstBySessionIdAndDeviceId(session.getId(), deviceId).isPresent()) {
+            throw fail(ErrorCode.DEVICE_ALREADY_USED);
+        }
+
         Attendance saved;
         try {
             saved = attendanceRepository.saveAndFlush(
-                    Attendance.byQr(session, userRepository.getReferenceById(student.id()), now));
-        } catch (DataIntegrityViolationException e) { // 같은 학생이 동시에 두 번 보낸 경우
-            throw new ApiException(ErrorCode.ALREADY_CHECKED);
+                    Attendance.byQr(session, userRepository.getReferenceById(student.id()), now, deviceId));
+        } catch (DataIntegrityViolationException e) { // 동시에 두 번 보낸 경우(같은 학생 또는 같은 기기)
+            // 예외 뒤에는 이 트랜잭션에서 다시 조회하지 않고, 어떤 UNIQUE 제약에 걸렸는지로 구분한다
+            String msg = String.valueOf(e.getMostSpecificCause().getMessage()).toLowerCase(java.util.Locale.ROOT);
+            throw msg.contains("uk_attendance_session_device")
+                    ? fail(ErrorCode.DEVICE_ALREADY_USED)
+                    : new ApiException(ErrorCode.ALREADY_CHECKED);
         }
         return new CheckinResponse(saved.getStatus(), saved.getCheckedAt(), courseId,
                 session.getCourse().getTitle(), session.getSessionNo());
