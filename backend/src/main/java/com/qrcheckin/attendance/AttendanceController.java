@@ -17,6 +17,7 @@ import com.qrcheckin.attendance.AttendanceDtos.MyAttendanceResponse;
 import com.qrcheckin.attendance.AttendanceDtos.RosterResponse;
 import com.qrcheckin.attendance.AttendanceDtos.RosterRow;
 import com.qrcheckin.auth.AuthUser;
+import com.qrcheckin.attendance.AttendanceDtos.BulkChangeStatusRequest;
 
 import jakarta.validation.Valid;
 
@@ -54,6 +55,13 @@ public class AttendanceController {
         return attendanceService.changeStatus(sessionId, userId, req.status(), user);
     }
 
+    @PutMapping("/sessions/{sessionId}/attendances/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<RosterRow> bulkChange(@PathVariable Long sessionId,@Valid @RequestBody BulkChangeStatusRequest req,
+            @AuthenticationPrincipal AuthUser user) {
+        return attendanceService.bulkChangeStatus(
+                sessionId, req.userIds(), req.status(), user);
+    }
     @GetMapping("/me/attendances")
     @PreAuthorize("hasRole('STUDENT')")
     public MyAttendanceResponse mine(@RequestParam Long courseId, @AuthenticationPrincipal AuthUser user) {

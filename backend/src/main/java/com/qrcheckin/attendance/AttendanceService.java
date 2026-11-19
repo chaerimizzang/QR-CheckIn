@@ -16,6 +16,8 @@ import com.qrcheckin.attendance.AttendanceDtos.MyRow;
 import com.qrcheckin.attendance.AttendanceDtos.RosterResponse;
 import com.qrcheckin.attendance.AttendanceDtos.AttendanceHistoryRow;
 import com.qrcheckin.attendance.AttendanceDtos.RosterRow;
+import com.qrcheckin.attendance.AttendanceDtos.ChangeStatusRequest;
+import com.qrcheckin.attendance.AttendanceDtos.BulkChangeStatusRequest;
 import com.qrcheckin.attendance.AttendanceDtos.Summary;
 import com.qrcheckin.auth.AuthUser;
 import com.qrcheckin.common.ApiException;
@@ -151,7 +153,17 @@ public class AttendanceService {
             .toList();
         }
 
+        //Bulk update attendance for multiple students
+    @Transactional
+    public List<RosterRow> bulkChangeStatus(Long sessionId, List<Long> userIds, AttendanceStatus status, AuthUser admin) {
+        List<RosterRow> updatedRows = new java.util.ArrayList<>();
 
+        for (Long userId : userIds) {
+            RosterRow updated = changeStatus(sessionId, userId, status, admin);
+            updatedRows.add(updated);
+        }
+        return updatedRows;
+    }
     /** B-10: 교육의 모든 회차를 회차 순서대로, 본인 출결과 함께 */
     @Transactional(readOnly = true)
     public MyAttendanceResponse myAttendances(Long courseId, AuthUser student) {
