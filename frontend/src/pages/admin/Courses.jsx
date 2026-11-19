@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { get, post } from '../../api'
+import InstallPrompt from '../../components/InstallPrompt'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 
 /** A-02 교육 목록 */
@@ -31,6 +32,7 @@ export default function Courses() {
       title="내 교육"
       actions={<button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>+ 교육 만들기</button>}
     >
+      <InstallPrompt />
       <ErrorBox error={error} />
       {showForm && (
         <form className="card row-form" onSubmit={create}>

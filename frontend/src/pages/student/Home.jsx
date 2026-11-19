@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { get } from '../../api'
+import InstallPrompt from '../../components/InstallPrompt'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 
 /** S-02 수강생 홈 */
@@ -11,6 +12,7 @@ export default function StudentHome() {
 
   return (
     <Layout>
+      <InstallPrompt />
       <Link to="/scan" className="scan-hero">
         <span className="scan-icon">▣</span>
         <span>QR 스캔해서 출석하기</span>

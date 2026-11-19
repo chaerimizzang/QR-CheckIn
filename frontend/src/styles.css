@@ -179,3 +179,7 @@ tr:last-child td { border-bottom: none; }
   .qr-big { font-size: 2.4rem; }
   .topbar-right .muted { display: none; }
 }
+
+/* D-20 앱 설치 안내 */
+.install-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; border: 1px solid var(--primary); }
+.install-actions { display: flex; gap: 6px; flex-shrink: 0; }
