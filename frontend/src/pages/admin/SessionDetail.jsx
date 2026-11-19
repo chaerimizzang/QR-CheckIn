@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post, put } from '../../api'
 import { ErrorBox, Layout, Loading, SessionBadge, StatusBadge } from '../../components/ui'
-import { POOR_ACCURACY_M, fmtDateTime, fmtTime, getPosition } from '../../util'
+import { POOR_ACCURACY_M, STATUS_LABEL, fmtDateTime, fmtTime, getPosition } from '../../util'
 
 /** A-04 회차 설정 + A-06 회차 출결 현황·수정 */
 export default function SessionDetail() {
@@ -294,92 +294,72 @@ export default function SessionDetail() {
             </div>
 
             {/* 일괄 출결 처리 */}
-            <div className="card" style={{ marginTop: 12 }}>
-              <strong>일괄 출결 처리</strong>
-            <div className="small muted">
-              선택한 학생 {selectedIds.length}명
+            <div className="bulk-box">
+              <div>
+                <strong>일괄 출결 처리</strong>
+                <div className="small muted">선택한 학생 {selectedIds.length}명</div>
+              </div>
+              <div className="bulk-actions">
+                <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}>
+                  <option value="PRESENT">출석</option>
+                  <option value="LATE">지각</option>
+                  <option value="ABSENT">결석</option>
+                </select>
+                <button className="btn btn-primary btn-sm" onClick={bulkChange} disabled={selectedIds.length === 0}>
+                  선택 학생 출결 변경
+                </button>
+              </div>
             </div>
-
-            <select
-              value={bulkStatus}
-              onChange={(e) => setBulkStatus(e.target.value)}
-            >
-              <option value="PRESENT">출석</option>
-              <option value="LATE">지각</option>
-              <option value="ABSENT">결석</option>
-            </select>
-
-            <button
-              className="btn btn-primary"
-              onClick={bulkChange}
-              disabled={selectedIds.length === 0}
-            style={{ marginTop: 8 }}
-            >
-              선택 학생 출결 변경
-            </button>
-          </div>
 
             {roster.students.length === 0 ? (<div className="empty">수강생이 없어요. 교육 화면에서 추가해 주세요.</div>) : filteredStudents.length === 0 ? (
               <div className="empty">검색 결과가 없습니다</div>) :(
               <div className="roster">
                 {filteredStudents.map((r) => (
-                  <div key={r.userId} className="roster-row">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(r.userId)}
-                      onChange={() => toggleStudent(r.userId)}
-                      style={{ width: 18, height: 18 }}
-                    />
-                    <div className="roster-who">
-                      <div>{r.name} <span className="muted small">{r.studentNo}</span></div>
-                      <div className="small muted">
-                        <StatusBadge status={r.status} />
-                        {r.checkedAt && ` ${fmtTime(r.checkedAt)}`}
-                        {r.source === 'MANUAL' && ' · 수정됨'}
-                        {r.source === 'SYSTEM' && ' · 자동'}
+                  <div key={r.userId} className="roster-item">
+                    <div className="roster-row">
+                      <input
+                        type="checkbox"
+                        aria-label={`${r.name} 선택`}
+                        checked={selectedIds.includes(r.userId)}
+                        onChange={() => toggleStudent(r.userId)}
+                      />
+                      <div className="roster-who">
+                        <div>{r.name} <span className="muted small">{r.studentNo}</span></div>
+                        <div className="small muted">
+                          <StatusBadge status={r.status} />
+                          {r.checkedAt && ` ${fmtTime(r.checkedAt)}`}
+                          {r.source === 'MANUAL' && ' · 수정됨'}
+                          {r.source === 'SYSTEM' && ' · 자동'}
+                        </div>
+                      </div>
+                      <button className="link-btn small" onClick={() =>
+                        historyOpen === r.userId ? setHistoryOpen(null) : loadHistory(r.userId)}>
+                        {historyOpen === r.userId ? '이력 닫기' : '수정 이력'}
+                      </button>
+                      <div className="seg-sm">
+                        {['PRESENT', 'LATE', 'ABSENT'].map((st) => (
+                          <button key={st} className={r.status === st ? `on ${st.toLowerCase()}` : ''}
+                            onClick={() => r.status !== st && change(r.userId, st)}>
+                            {{ PRESENT: '출석', LATE: '지각', ABSENT: '결석' }[st]}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    
-                    <button
-                    className="btn btn-sm"
-                    onClick={() => loadHistory(r.userId)}>수정 이력
-                    </button>
 
                     {historyOpen === r.userId && (
-                      <div className="small">
-                        <strong>출결 수정 이력</strong>
-
+                      <div className="roster-history small">
                         {!history[r.userId]?.length ? (
-                          <p>수정 이력이 없습니다.</p>
+                          <span className="muted">수정 이력이 없어요</span>
                         ) : (
                           history[r.userId].map((item) => (
                             <div key={item.id}>
-                              {item.oldStatus || '미정'} → {item.newStatus}
-                              {' · '}
-                              {item.modifiedByName}
-                              {' · '}
-                              {fmtTime(item.modifiedAt)}
+                              {STATUS_LABEL[item.oldStatus] || '미정'} → {STATUS_LABEL[item.newStatus] || item.newStatus}
+                              <span className="muted"> · {item.modifiedByName} · {fmtTime(item.modifiedAt)}</span>
                             </div>
                           ))
                         )}
-
-    <button
-      className="link-btn"
-      onClick={() => setHistoryOpen(null)}
-    >
-      닫기
-    </button>
-  </div>
-)}
-
-                    <div className="seg-sm">
-                      {['PRESENT', 'LATE', 'ABSENT'].map((st) => (
-                        <button key={st} className={r.status === st ? `on ${st.toLowerCase()}` : ''}
-                          onClick={() => r.status !== st && change(r.userId, st)}>
-                          {{ PRESENT: '출석', LATE: '지각', ABSENT: '결석' }[st]}
-                        </button>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

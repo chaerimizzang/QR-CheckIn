@@ -64,7 +64,7 @@ export default function Signup() {
         <label className="check">
           <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
           <span className="small">
-            출결 확인을 위해 이름·학번·이메일과 <b>출석 인증 순간의 위치</b>를 수집하는 데 동의합니다.
+            출결 확인을 위해 이름·학번·이메일과 <b>출석 인증 순간의 위치</b>, 대리 출석 방지를 위한 <b>기기 식별값</b>을 수집하는 데 동의합니다.
             위치는 스캔할 때 한 번만 쓰고 저장하지 않아요.
           </span>
         </label>
