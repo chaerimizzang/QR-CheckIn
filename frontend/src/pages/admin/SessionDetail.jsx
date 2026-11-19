@@ -34,6 +34,16 @@ export default function SessionDetail() {
   const loadRoster = () => get(`/sessions/${sessionId}/attendances`).then(setRoster)
   useEffect(() => { Promise.all([loadSession(), loadRoster()]).catch(setError) }, [sessionId])
 
+  //실시간 출결 현황 자동 갱신
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      get(`/sessions/${sessionId}/attendances`)
+        .then(setRoster)
+        .catch(setError)
+    }, 5000)
+    return () => window.clearInterval(timer)
+  }, [sessionId])
+
   async function useMyLocation() {
     setLocating(true)
     setError(null)
@@ -150,6 +160,17 @@ export default function SessionDetail() {
   const keyword = searchTerm.trim().toLowerCase()
   return (student.name.toLowerCase().includes(keyword) || student.studentNo.toLowerCase().includes(keyword))
   }) ?? []
+ 
+  //calculation of the percentage
+  const total = roster?.summary.enrolled ?? 0
+  const presentRate = total === 0
+    ? 0 : Math.round((roster.summary.present / total) * 100)
+
+  const lateRate = total === 0
+    ? 0 : Math.round((roster.summary.late / total) * 100)
+
+  const absentRate = total === 0
+    ? 0 : Math.round((roster.summary.absent / total) * 100)
 
   return (
     <Layout back={`/admin/courses/${s.courseId}`} title={<>{s.sessionNo}회차 <SessionBadge status={s.status} /></>}>
@@ -254,12 +275,12 @@ export default function SessionDetail() {
         {!roster ? <Loading /> : (
           <>
             <div className="summary">
-              <span>출석 <b>{roster.summary.present}</b></span>
-              <span>지각 <b>{roster.summary.late}</b></span>
-              <span>결석 <b>{roster.summary.absent}</b></span>
-              <span>미정 <b>{roster.summary.pending}</b></span>
-              <span className="muted">/ 전체 {roster.summary.enrolled}명</span>
-            </div>
+            <span> 출석 <b>{roster.summary.present}</b> ({presentRate}%)</span>
+            <span> 지각 <b>{roster.summary.late}</b> ({lateRate}%) </span>
+            <span> 결석 <b>{roster.summary.absent}</b> ({absentRate}%) </span>
+            <span> 미정 <b>{roster.summary.pending}</b> </span>
+            <span className="muted">/ 전체 {total}명 </span>
+          </div>
             {/* 학생 검색 */}
             <div className="field" style={{ marginTop: 16 }}>
               <label htmlFor="studentSearch">학생 검색</label>
