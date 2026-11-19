@@ -4,6 +4,7 @@ import { homePath, useAuth } from './auth'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import CheckIn from './pages/CheckIn'
+import ChangePassword from './pages/ChangePassword'
 import Courses from './pages/admin/Courses'
 import CourseDetail from './pages/admin/CourseDetail'
 import SessionDetail from './pages/admin/SessionDetail'
@@ -34,6 +35,14 @@ export default function App() {
       <Route path="/" element={<Navigate to={user ? homePath(user) : '/login'} replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route
+  path="/me/password"
+  element={
+    <RequireRole>
+      <ChangePassword />
+    </RequireRole>
+  }
+/>
 
       {/* 관리자 A-02 ~ A-06 */}
       <Route path="/admin" element={<RequireRole role="ADMIN"><Courses /></RequireRole>} />

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
 import { fmtDateTime, nextHourLocal } from '../../util'
+import AttendanceStatistics from './AttendanceStatistics'
 
 /** A-03 교육 상세: 회차 목록 + 수강생 목록 */
 export default function CourseDetail() {
@@ -11,6 +12,7 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(null)
   const [sessions, setSessions] = useState(null)
   const [students, setStudents] = useState(null)
+  const [attendanceRates, setAttendanceRates] = useState(null)
   const [tab, setTab] = useState('sessions')
   const [email, setEmail] = useState('')
   const [scheduledAt, setScheduledAt] = useState(nextHourLocal())
@@ -18,10 +20,11 @@ export default function CourseDetail() {
   const [notice, setNotice] = useState(null)
 
   const load = () => Promise.all([
-    get(`/courses/${courseId}`).then(setCourse),
-    get(`/courses/${courseId}/sessions`).then(setSessions),
-    get(`/courses/${courseId}/enrollments`).then(setStudents),
-  ]).catch(setError)
+  get(`/courses/${courseId}`).then(setCourse),
+  get(`/courses/${courseId}/sessions`).then(setSessions),
+  get(`/courses/${courseId}/enrollments`).then(setStudents),
+  get(`/courses/${courseId}/attendance/rate`).then(setAttendanceRates),
+]).catch(setError)
   useEffect(() => { load() }, [courseId])
 
   async function addSession(e) {
@@ -69,9 +72,10 @@ export default function CourseDetail() {
       {notice && <div className="alert alert-ok">{notice}</div>}
 
       <div className="tabs">
-        <button className={tab === 'sessions' ? 'on' : ''} onClick={() => setTab('sessions')}>회차 {sessions?.length ?? ''}</button>
-        <button className={tab === 'students' ? 'on' : ''} onClick={() => setTab('students')}>수강생 {students?.length ?? ''}</button>
-      </div>
+  <button className={tab === 'sessions' ? 'on' : ''} onClick={() => setTab('sessions')}>회차 {sessions?.length ?? ''}</button>
+  <button className={tab === 'students' ? 'on' : ''} onClick={() => setTab('students')}>수강생 {students?.length ?? ''}</button>
+  <button className={tab === 'statistics' ? 'on' : ''} onClick={() => setTab('statistics')}>출석 통계</button>
+</div>
 
       {tab === 'sessions' && (
         <>
@@ -109,22 +113,63 @@ export default function CourseDetail() {
           ) : (
             <div className="card table-card">
               <table>
-                <thead><tr><th>이름</th><th>학번</th><th>이메일</th><th /></tr></thead>
-                <tbody>
-                  {students.map((s) => (
-                    <tr key={s.userId}>
-                      <td>{s.name}</td>
-                      <td>{s.studentNo || '-'}</td>
-                      <td className="small muted">{s.email}</td>
-                      <td className="right"><button className="link-btn danger" onClick={() => removeStudent(s)}>빼기</button></td>
+                <thead>
+                    <tr>
+                      <th>이름</th>
+                      <th>학번</th>
+                      <th>이메일</th>
+                      <th>출석</th>
+                      <th>지각</th>
+                      <th>결석</th>
+                      <th>환산 결석</th>
+                      <th>출석률</th>
+                      <th />
                     </tr>
-                  ))}
+                  </thead>
+              <tbody>
+                  {students.map((s) => {
+                    const rate = attendanceRates?.students?.find(
+                      (r) => r.userId === s.userId
+                    )
+
+                    return (
+                      <tr key={s.userId}>
+                        <td>{s.name}</td>
+                        <td>{s.studentNo || '-'}</td>
+                        <td className="small muted">{s.email}</td>
+
+                        <td>{rate?.presentCount ?? '-'}</td>
+                        <td>{rate?.lateCount ?? '-'}</td>
+                        <td>{rate?.absentCount ?? '-'}</td>
+                        <td>{rate?.convertedAbsences ?? '-'}</td>
+                        <td>
+                          {rate
+                            ? `${rate.attendanceRate}%`
+                            : '-'}
+                        </td>
+
+                        <td className="right">
+                          <button
+                            className="link-btn danger"
+                            onClick={() => removeStudent(s)}
+                          >
+                            빼기
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </>
       )}
+
+      {tab === 'statistics' && (
+        <AttendanceStatistics courseId={courseId} />
+      )}
+
 
       <div className="danger-zone">
         <button className="link-btn danger" onClick={removeCourse}>교육 삭제</button>

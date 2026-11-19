@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { SESSION_LABEL, STATUS_LABEL } from '../util'
@@ -5,6 +6,7 @@ import { SESSION_LABEL, STATUS_LABEL } from '../util'
 export function Layout({ title, back, children, actions }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
   return (
     <div className="page">
       <header className="topbar">
@@ -18,7 +20,50 @@ export function Layout({ title, back, children, actions }) {
         </div>
         {user && (
           <div className="topbar-right">
-            <span className="muted small">{user.name} · {user.role === 'ADMIN' ? '관리자' : '수강생'}</span>
+
+<div style={{ position: 'relative' }}>
+  <button
+    type="button"
+    className="link-btn"
+    onClick={() => setMenuOpen(!menuOpen)}
+    aria-expanded={menuOpen}
+    style={{ color: '#64748b' }}
+  >
+    {user.name} · {user.role === 'ADMIN' ? '관리자' : '수강생'} ▾
+  </button>
+
+  {menuOpen && (
+    <div
+      style={{
+        position: 'absolute',
+        top: '100%',
+        right: 0,
+        marginTop: 8,
+        minWidth: 180,
+        padding: 8,
+        background: 'white',
+        border: '1px solid #e2e8f0',
+        borderRadius: 10,
+        boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
+        zIndex: 100,
+      }}
+    >
+      <Link
+        to="/me/password"
+        onClick={() => setMenuOpen(false)}
+        style={{
+          display: 'block',
+          padding: '10px 12px',
+          color: '#1e293b',
+          textDecoration: 'none',
+        }}
+      >
+        🔒 비밀번호 변경
+      </Link>
+    </div>
+  )}
+</div>
+
             <button className="link-btn" onClick={() => { logout(); navigate('/login') }}>로그아웃</button>
           </div>
         )}
