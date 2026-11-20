@@ -45,21 +45,24 @@ class StudentCsvTest {
         login("csv3@t.com", "STUDENT", "박학생", "20240003");
         long c = courseId(prof, "자료구조");
 
-        // UTF-8(BOM) — 성공 1, 실패 4(이름 불일치·연락처 형식·미가입·파일 안 중복)
-        String csv = "﻿학번,이름,연락처\n"
-                + "20240001,김학생,010-1234-5678\n"
-                + "20240002,홍길동,010-1111-2222\n"
-                + "20240003,박학생,02-123-4567\n"
-                + "29999999,없는사람,010-0000-0000\n"
-                + "20240001,김학생,010-1234-5678\n";
+        // UTF-8(BOM) — 성공 1, 실패 5(이름 불일치·학번 불일치·미가입·파일 안 중복·대문자 이메일 중복)
+        String csv = "﻿학번,이름,이메일\n"
+                + "20240001,김학생,csv1@t.com\n"
+                + "20240002,홍길동,csv2@t.com\n"
+                + "20249998,박학생,csv3@t.com\n"
+                + "29999999,없는사람,nobody@t.com\n"
+                + "20240001,김학생,csv1@t.com\n"
+                + "20240001,김학생,CSV1@t.com\n";
         upload(prof, c, csv.getBytes(StandardCharsets.UTF_8))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.successCount").value(1))
-                .andExpect(jsonPath("$.failureCount").value(4))
-                .andExpect(jsonPath("$.failures[0].studentNo").value("20240002"));
+                .andExpect(jsonPath("$.failureCount").value(5))
+                .andExpect(jsonPath("$.failures[0].reason").value("가입 정보의 이름과 달라요"))
+                .andExpect(jsonPath("$.failures[1].reason").value("가입 정보의 학번과 달라요"))
+                .andExpect(jsonPath("$.failures[2].reason").value("회원가입하지 않은 이메일이에요"));
 
         // 엑셀 기본 'CSV(쉼표로 분리)' = CP949 로 저장된 파일도 읽는다
-        String excel = "학번,이름,연락처\r\n20240003,박학생,01099998888\r\n";
+        String excel = "학번,이름,이메일\r\n20240003,박학생,csv3@t.com\r\n";
         upload(prof, c, excel.getBytes(Charset.forName("MS949")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.successCount").value(1));
@@ -67,7 +70,7 @@ class StudentCsvTest {
         // 첫 줄(열 이름)이 다르거나 빈 파일이면 400 과 안내 문구(서버 오류 500 이 아니라)
         upload(prof, c, "번호,성명\n1,김\n".getBytes(StandardCharsets.UTF_8))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("CSV 첫 줄에는 학번,이름,연락처가 필요해요"));
+                .andExpect(jsonPath("$.message").value("CSV 첫 줄에는 학번,이름,이메일이 필요해요"));
         upload(prof, c, new byte[0]).andExpect(status().isBadRequest());
 
         // 등록 결과: 김학생, 박학생

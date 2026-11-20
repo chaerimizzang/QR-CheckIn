@@ -3,7 +3,7 @@ import { download, upload } from '../api'
 
 /** 엑셀에서 열어도 한글이 깨지지 않는 CSV 양식(UTF-8 BOM) */
 function downloadTemplate() {
-  const text = '﻿학번,이름,연락처\n20240001,홍길동,010-1234-5678\n'
+  const text = '﻿학번,이름,이메일\n20240001,홍길동,hong@example.com\n'
   const a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }))
   a.download = '수강생_등록_양식.csv'
@@ -14,7 +14,7 @@ function downloadTemplate() {
 
 /**
  * 교육 상세 '수강생' 탭 — D-02 CSV로 한 번에 등록 · D-10 출결부/출석률 내려받기
- * CSV: 첫 줄 '학번,이름,연락처'. 가입한 학생만, 학번·이름이 가입 정보와 같아야 등록된다.
+ * CSV: 첫 줄 '학번,이름,이메일'. 가입한 학생만, 이메일로 찾은 계정의 학번·이름이 같아야 등록된다.
  */
 export default function StudentCsvTools({ course, onDone, onError }) {
   const fileRef = useRef(null)
@@ -50,7 +50,7 @@ export default function StudentCsvTools({ course, onDone, onError }) {
           <button type="button" className="link-btn small" onClick={downloadTemplate}>양식 받기</button>
         </div>
         <p className="muted small">
-          첫 줄은 <b>학번,이름,연락처</b>예요. 회원가입한 학생만 등록되고, 학번·이름이 가입 정보와 같아야 해요.
+          첫 줄은 <b>학번,이름,이메일</b>이에요. 회원가입한 학생만 등록되고, 학번·이름이 가입 정보와 같아야 해요.
           엑셀에서 저장한 CSV도 그대로 올릴 수 있어요.
         </p>
         <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={onFile} hidden />
