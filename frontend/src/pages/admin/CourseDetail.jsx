@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
 import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal } from '../../util'
-import ScheduleEditor from '../../components/ScheduleEditor'
 import AttendanceStatistics from './AttendanceStatistics'
 import Icon from '../../components/Icon'
 
@@ -15,8 +14,7 @@ export default function CourseDetail() {
   const [sessions, setSessions] = useState(null)
   const [students, setStudents] = useState(null)
   const [attendanceRates, setAttendanceRates] = useState(null)
-  const [params] = useSearchParams()
-  const [tab, setTab] = useState(params.get('tab') === 'schedule' ? 'schedule' : 'sessions')
+  const [tab, setTab] = useState('sessions')
   const [email, setEmail] = useState('')
   const [scheduledAt, setScheduledAt] = useState(nextHourLocal())
   const [error, setError] = useState(null)
@@ -81,7 +79,6 @@ export default function CourseDetail() {
       <div className="tabs">
   <button className={tab === 'sessions' ? 'on' : ''} onClick={() => setTab('sessions')}>회차 {sessions?.length ?? ''}</button>
   <button className={tab === 'students' ? 'on' : ''} onClick={() => setTab('students')}>수강생 {students?.length ?? ''}</button>
-  <button className={tab === 'schedule' ? 'on' : ''} onClick={() => setTab('schedule')}>시간표</button>
   <button className={tab === 'statistics' ? 'on' : ''} onClick={() => setTab('statistics')}>출석 통계</button>
 </div>
 
@@ -108,10 +105,6 @@ export default function CourseDetail() {
             </div>
           )}
         </>
-      )}
-
-      {tab === 'schedule' && (
-        <ScheduleEditor course={course} onChanged={load} onError={setError} onNotice={setNotice} />
       )}
 
       {tab === 'students' && (

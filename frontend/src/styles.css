@@ -260,3 +260,7 @@ tr:last-child td { border-bottom: none; }
 .day-chip { flex: 1; font: inherit; font-weight: 600; padding: 10px 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--muted); cursor: pointer; }
 .day-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
 .plan .field > span { font-size: 0.9rem; font-weight: 600; }
+.plan-box { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fafbfd; margin-bottom: 10px; }
+.time-range { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+.plan-list { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; }
+.plan-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 10px; background: #eaf2ff; color: var(--primary); font-weight: 600; }

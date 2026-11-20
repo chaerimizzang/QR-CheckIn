@@ -21,13 +21,14 @@ public final class CourseDtos {
 
     /**
      * B-02 교육 생성·수정.
-     * schedule(선택, 만들 때만 사용): 수업 요일(월~금)·시작~끝 시간 → 시간표 저장 + 회차 자동 생성
+     * schedules(선택, 만들 때만 사용): [수업 요일(월~금) + 시작~끝 시간] 묶음 여러 개
+     *   → 시간표 저장 + 오늘부터 종료일까지 회차 자동 생성. 예: 월·수 09:00~10:30 + 금 13:00~15:00
      */
     public record CourseRequest(
             @NotBlank @Size(max = 100) String title,
             LocalDate startDate,
             LocalDate endDate,
-            @Valid WeeklyPlan schedule) {
+            @Size(max = 10, message = "수업 시간은 10개까지 넣을 수 있어요") List<@Valid WeeklyPlan> schedules) {
     }
 
     /** schedules: 주간 시간표(월요일부터 정렬) */

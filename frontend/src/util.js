@@ -141,24 +141,8 @@ export const monthEnd = (ym) => {
   const [y, m] = ym.split('-').map(Number)
   return `${ym}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
 }
-/** "2026-09-01" → "2026-09" */
-export const toMonth = (date) => (date ? date.slice(0, 7) : '')
 /** 교육 기간 → "2026.09 ~ 2026.12" (없으면 빈 문자열) */
 export const fmtPeriod = (start, end) => {
   const f = (d) => (d ? d.slice(0, 7).replace('-', '.') : '')
   return start || end ? `${f(start)} ~ ${f(end)}` : ''
-}
-/** 주간 계획(요일들 + 시작~끝) → 시간표 칸 목록 */
-export const planToSlots = (plan) => {
-  const dur = toMinutes(plan.endTime) - toMinutes(plan.startTime)
-  return WEEKDAYS.filter((d) => plan.days.includes(d)).map((d) => ({ dayOfWeek: d, startTime: plan.startTime, durationMinutes: dur }))
-}
-/** 시간표 칸 목록 → 주간 계획(첫 칸의 시간 기준). sameTime=false 면 요일마다 시간이 달랐다는 뜻 */
-export const slotsToPlan = (slots) => {
-  const list = slots ?? []
-  const first = list[0]
-  const startTime = first?.startTime ?? '09:00'
-  const endTime = first ? fromMinutes(toMinutes(first.startTime) + first.durationMinutes) : '10:30'
-  const sameTime = list.every((s) => s.startTime === first.startTime && s.durationMinutes === first.durationMinutes)
-  return { days: [...new Set(list.map((s) => s.dayOfWeek))].filter((d) => WEEKDAYS.includes(d)), startTime, endTime, sameTime }
 }

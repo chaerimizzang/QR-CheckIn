@@ -69,11 +69,11 @@ export default function Timetable() {
           </div>
 
           {blocks.length === 0 && (
-            <Empty>{isAdmin ? '교육 화면의 [시간표] 탭에서 수업 시간을 넣으면 여기에 보여요.' : '아직 시간표가 정해진 교육이 없어요.'}</Empty>
+            <Empty>{isAdmin ? '교육을 만들 때 수업 요일·시간을 넣으면 여기에 보여요.' : '아직 시간표가 정해진 교육이 없어요.'}</Empty>
           )}
           {isAdmin && unscheduled.length > 0 && blocks.length > 0 && (
             <p className="muted small">시간표가 없는 교육: {unscheduled.map((c, i) => (
-              <span key={c.id}>{i > 0 && ', '}<Link to={`/admin/courses/${c.id}?tab=schedule`}>{c.title}</Link></span>
+              <span key={c.id}>{i > 0 && ', '}<Link to={`/admin/courses/${c.id}`}>{c.title}</Link></span>
             ))}</p>
           )}
         </>
