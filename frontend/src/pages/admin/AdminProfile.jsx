@@ -4,6 +4,7 @@ import { get } from '../../api'
 import Icon from '../../components/Icon'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import AccountCard from '../../components/AccountCard'
+import { PushCard } from '../../components/PushCard'
 
 /** 관리자 프로필: 내 정보 + 개설한 교육 요약. 교육을 누르면 교육 화면으로 */
 export default function AdminProfile() {
@@ -25,6 +26,7 @@ export default function AdminProfile() {
           </div>
 
           <AccountCard name={data.name} email={data.email} onNameChange={(name) => setData({ ...data, name })} />
+          <PushCard />
 
           <div className="stat-row">
             <div className="card stat"><div className="stat-num">{data.courseCount}</div><div className="muted small">개설한 교육</div></div>

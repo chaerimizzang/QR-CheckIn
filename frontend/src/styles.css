@@ -286,3 +286,5 @@ tr:last-child td { border-bottom: none; }
 .account-edit input { flex: 1; min-width: 140px; padding: 8px 10px; }
 .account-pw { border-top: 1px solid var(--line); padding-top: 12px; }
 .account-pw label .muted { font-weight: 400; }
+.account-value.wrap { white-space: normal; }
+.push-banner { border-color: var(--line); }

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { post, session, setUnauthorizedHandler } from './api'
+import { disablePushOnLogout } from './push'
 
 const AuthContext = createContext(null)
 
@@ -9,6 +10,7 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate()
 
   const logout = useCallback(() => {
+    disablePushOnLogout() // 토큰을 지우기 전에 이 기기의 수업 알림을 끊는다
     session.clear()
     setUser(null)
   }, [])

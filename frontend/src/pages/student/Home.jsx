@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { get } from '../../api'
 import InstallPrompt from '../../components/InstallPrompt'
+import { PushBanner } from '../../components/PushCard'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import Icon from '../../components/Icon'
 import { fmtSchedules } from '../../util'
@@ -15,6 +16,7 @@ export default function StudentHome() {
   return (
     <Layout>
       <InstallPrompt />
+      <PushBanner />
       <Link to="/scan" className="scan-hero">
         <Icon name="scan-white" size={44} className="scan-icon" />
         <span>QR 스캔해서 출석하기</span>

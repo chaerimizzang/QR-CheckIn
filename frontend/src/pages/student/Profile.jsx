@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { get } from '../../api'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import AccountCard from '../../components/AccountCard'
+import { PushCard } from '../../components/PushCard'
 import Icon from '../../components/Icon'
 
 /** 학생 프로필: 내 정보 + 수강 중인 수업별 출석률. 수업을 누르면 회차별 출결(S-04)로 */
@@ -27,6 +28,7 @@ export default function StudentProfile() {
           </div>
 
           <AccountCard name={data.name} email={data.email} onNameChange={(name) => setData({ ...data, name })} />
+          <PushCard />
 
           <h2 className="section-title">수강 중인 수업 <span className="muted small">{data.courses.length}개</span></h2>
           {data.courses.length === 0 ? (

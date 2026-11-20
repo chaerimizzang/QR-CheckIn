@@ -59,6 +59,10 @@ public class ClassSession {
     @Column(name = "qr_salt", length = 64)
     private String qrSalt;
 
+    /** 수업 시작 전 알림을 보낸 시각(안 보냈으면 null) */
+    @Column(name = "reminder_sent_at")
+    private LocalDateTime reminderSentAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private SessionStatus status;
@@ -81,11 +85,19 @@ public class ClassSession {
     /** 출석 조건 수정(B-05) — SCHEDULED 상태에서만 서비스가 호출한다 */
     public void updateConditions(LocalDateTime scheduledAt, Double latitude, Double longitude,
                                  int radiusM, int checkinMinutes) {
+        if (!scheduledAt.equals(this.scheduledAt)) {
+            this.reminderSentAt = null; // 시간이 바뀌면 새 시간 기준으로 다시 알린다
+        }
         this.scheduledAt = scheduledAt;
         this.latitude = latitude;
         this.longitude = longitude;
         this.radiusM = radiusM;
         this.checkinMinutes = checkinMinutes;
+    }
+
+    /** 수업 시작 전 알림을 보냈다고 표시(같은 회차에 두 번 보내지 않도록) */
+    public void markReminded(LocalDateTime now) {
+        this.reminderSentAt = now;
     }
 
     public void open(LocalDateTime now, String newSalt) {

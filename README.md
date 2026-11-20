@@ -132,6 +132,10 @@ DB_URL='jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul' DB_PASS
 | GET | `/me` | 내 정보 | 로그인 |
 | PUT | `/me/name` | 이름 변경 `{"name":"..."}` | 로그인 |
 | POST | `/me/password` | 비밀번호 변경 (`currentPassword`, `newPassword`, `confirmPassword`) | 로그인 |
+| GET | `/push/public-key` | 알림용 서버 공개키 | 로그인 |
+| POST | `/push/subscriptions` | 이 기기 알림 구독 (`endpoint`, `keys.p256dh`, `keys.auth`) | 로그인 |
+| POST | `/push/subscriptions/delete` | 이 기기 알림 끄기 `{"endpoint":"..."}` | 로그인 |
+| POST | `/push/test` | 내 기기로 테스트 알림 | 로그인 |
 | GET | `/courses` | 내 교육 목록 (관리자: 개설한 교육, 수강생: 등록된 교육) | 로그인 |
 | POST | `/courses` | 교육 생성 | 관리자 |
 | GET / PUT / DELETE | `/courses/{courseId}` | 교육 조회·수정·삭제 | 소유 관리자(조회는 수강생도) |
@@ -155,6 +159,16 @@ curl -X POST localhost:8080/api/v1/auth/signup -H "Content-Type: application/jso
 curl -X POST localhost:8080/api/v1/auth/login -H "Content-Type: application/json" \
   -d '{"email":"prof@test.com","password":"password123"}'
 ```
+
+## 수업 10분 전 알림 (웹 푸시)
+
+프로필의 **수업 알림 → 켜기**(또는 홈 화면 안내의 [켜기])를 누르면, 수업 시작 10분 전에 수강생과 교수 휴대폰으로 알림이 갑니다.
+서버가 1분마다 곧 시작하는 회차를 찾아 보내며, 회차마다 한 번만 보냅니다.
+
+- 안드로이드·PC 크롬/엣지: 브라우저와 설치한 앱 모두 가능 / 아이폰: 홈 화면에 추가한 앱(iOS 16.4+)에서만 가능
+- https 주소에서만 동작합니다(고정 주소 `https://qr-checkin.tailcefec1.ts.net` 사용). `npm run dev` 개발 서버에서는 동작하지 않습니다
+- 서버 키(VAPID)는 처음 실행할 때 자동으로 만들어 DB에 저장하므로 따로 설정할 것이 없습니다
+- 알림 내용은 표준(RFC 8291)대로 암호화되어 구글·애플 푸시 서버도 내용을 볼 수 없습니다. 로그아웃하면 그 기기의 알림이 꺼집니다
 
 ## QR 토큰 설계 요약
 
