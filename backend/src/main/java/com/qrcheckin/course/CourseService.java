@@ -11,6 +11,8 @@ import com.qrcheckin.common.ApiException;
 import com.qrcheckin.common.ErrorCode;
 import com.qrcheckin.course.CourseDtos.CourseRequest;
 import com.qrcheckin.course.CourseDtos.CourseResponse;
+import com.qrcheckin.schedule.CourseScheduleRepository;
+import com.qrcheckin.schedule.ScheduleDtos.ScheduleSlot;
 import com.qrcheckin.session.ClassSessionRepository;
 import com.qrcheckin.user.UserRepository;
 
@@ -23,10 +25,12 @@ public class CourseService {
     private final ClassSessionRepository sessionRepository;
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
+    private final CourseScheduleRepository scheduleRepository;
 
     public CourseService(CourseRepository courseRepository, EnrollmentRepository enrollmentRepository,
                          ClassSessionRepository sessionRepository, AttendanceRepository attendanceRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository, CourseScheduleRepository scheduleRepository) {
+        this.scheduleRepository = scheduleRepository;
         this.courseRepository = courseRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.sessionRepository = sessionRepository;
@@ -71,13 +75,14 @@ public class CourseService {
         return toResponse(course);
     }
 
-    /** 교육 삭제 — 출결 → 회차 → 수강 등록 → 교육 순서로 지운다 */
+    /** 교육 삭제 — 출결 → 회차 → 수강 등록 → 시간표 → 교육 순서로 지운다 */
     @Transactional
     public void delete(Long courseId, AuthUser user) {
         Course course = getOwnedCourse(courseId, user);
         attendanceRepository.deleteBySessionCourseId(courseId);
         sessionRepository.deleteByCourseId(courseId);
         enrollmentRepository.deleteByCourseId(courseId);
+        scheduleRepository.deleteByCourseId(courseId);
         courseRepository.delete(course);
     }
 
@@ -97,7 +102,9 @@ public class CourseService {
     }
 
     private CourseResponse toResponse(Course c) {
-        return CourseResponse.of(c, enrollmentRepository.countByCourseId(c.getId()));
+        List<ScheduleSlot> schedules = scheduleRepository.findByCourseId(c.getId()).stream()
+                .map(ScheduleSlot::from).sorted(ScheduleSlot.ORDER).toList();
+        return CourseResponse.of(c, enrollmentRepository.countByCourseId(c.getId()), schedules);
     }
 
     private static void validateDates(CourseRequest req) {

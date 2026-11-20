@@ -5,20 +5,15 @@ import { SESSION_LABEL, STATUS_LABEL } from '../util'
 import Icon from './Icon'
 
 
-/** 왼쪽 메뉴 항목 — 역할별 */
+/** 왼쪽 메뉴 항목 — 홈(관리자: 내 교육·교육 만들기 / 수강생: 내 교육·QR 스캔)·프로필·시간표·비밀번호 변경 */
+const COMMON = [
+  { to: '/profile', label: '프로필', icon: 'user', match: (p) => p === '/profile' },
+  { to: '/timetable', label: '시간표', icon: 'calendar', match: (p) => p === '/timetable' },
+  { to: '/me/password', label: '비밀번호 변경', icon: 'lock', match: (p) => p === '/me/password' },
+]
 const MENU = {
-  ADMIN: [
-    { to: '/profile', label: '프로필', icon: 'user', match: (p) => p === '/profile' },
-    { to: '/admin', label: '내 교육', icon: 'home', match: (p, q) => p === '/admin' && !q.get('new') },
-    { to: '/admin?new=1', label: '교육 만들기', icon: 'plus', match: (p, q) => p === '/admin' && q.get('new') === '1' },
-    { to: '/me/password', label: '비밀번호 변경', icon: 'lock', match: (p) => p === '/me/password' },
-  ],
-  STUDENT: [
-    { to: '/profile', label: '프로필', icon: 'user', match: (p) => p === '/profile' },
-    { to: '/scan', label: 'QR 스캔', icon: 'scan', match: (p) => p === '/scan' },
-    { to: '/student', label: '내 교육', icon: 'home', match: (p) => p === '/student' },
-    { to: '/me/password', label: '비밀번호 변경', icon: 'lock', match: (p) => p === '/me/password' },
-  ],
+  ADMIN: [{ to: '/admin', label: '홈', icon: 'home', match: (p) => p === '/admin' }, ...COMMON],
+  STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' }, ...COMMON],
 }
 
 function SideMenu({ open, onClose }) {

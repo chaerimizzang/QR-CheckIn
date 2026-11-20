@@ -4,6 +4,7 @@ import { get, post } from '../../api'
 import InstallPrompt from '../../components/InstallPrompt'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import Icon from '../../components/Icon'
+import { fmtSchedules } from '../../util'
 
 /** A-02 교육 목록 */
 export default function Courses() {
@@ -53,7 +54,7 @@ export default function Courses() {
               <div>
                 <div className="item-title">{c.title}</div>
                 <div className="muted small">
-                  수강생 {c.studentCount}명{c.startDate && ` · ${c.startDate} ~ ${c.endDate || ''}`}
+                  수강생 {c.studentCount}명{fmtSchedules(c.schedules) && ` · ${fmtSchedules(c.schedules)}`}
                 </div>
               </div>
               <Icon name="chevron" size={20} className="chevron" />

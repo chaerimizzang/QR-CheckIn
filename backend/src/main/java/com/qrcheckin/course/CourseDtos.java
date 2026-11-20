@@ -1,5 +1,9 @@
 package com.qrcheckin.course;
 
+import java.util.List;
+
+import com.qrcheckin.schedule.ScheduleDtos.ScheduleSlot;
+
 import java.time.LocalDate;
 
 import com.qrcheckin.user.User;
@@ -20,11 +24,12 @@ public final class CourseDtos {
             LocalDate endDate) {
     }
 
+    /** schedules: 주간 시간표(월요일부터 정렬) */
     public record CourseResponse(Long id, String title, LocalDate startDate, LocalDate endDate,
-                                 String ownerName, long studentCount) {
-        public static CourseResponse of(Course c, long studentCount) {
+                                 String ownerName, long studentCount, List<ScheduleSlot> schedules) {
+        public static CourseResponse of(Course c, long studentCount, List<ScheduleSlot> schedules) {
             return new CourseResponse(c.getId(), c.getTitle(), c.getStartDate(), c.getEndDate(),
-                    c.getOwner().getName(), studentCount);
+                    c.getOwner().getName(), studentCount, schedules);
         }
     }
 

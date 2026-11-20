@@ -112,3 +112,21 @@ export function getDeviceId() {
     return window.__qrDeviceId
   }
 }
+
+/** 주간 시간표 — 요일(월~일) */
+export const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+export const DAY_LABEL = { MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목', FRIDAY: '금', SATURDAY: '토', SUNDAY: '일' }
+
+/** "09:00" → 540(분) */
+export const toMinutes = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
+/** 540 → "09:00" */
+export const fromMinutes = (min) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
+/** 시간표 한 칸 → "월 09:00–11:00" */
+export const fmtSlot = (s) => `${DAY_LABEL[s.dayOfWeek]} ${s.startTime}–${fromMinutes(toMinutes(s.startTime) + s.durationMinutes)}`
+/** 시간표 전체 → "월 09:00–11:00 · 수 13:00–14:00" (없으면 빈 문자열) */
+export const fmtSchedules = (slots) => (slots ?? []).map(fmtSlot).join(' · ')
+/** 수업 길이(분) → "2시간", "1시간 30분" */
+export const fmtDuration = (min) => {
+  const h = Math.floor(min / 60), m = min % 60
+  return [h && `${h}시간`, m && `${m}분`].filter(Boolean).join(' ')
+}

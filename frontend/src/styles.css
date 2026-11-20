@@ -234,3 +234,26 @@ tr:last-child td { border-bottom: none; }
 .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .stat { text-align: center; padding: 14px; }
 .stat-num { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+
+/* 교육 시간표 편집 */
+.card-title { font-size: 1rem; margin: 0 0 10px; }
+.course-meta { margin: -6px 0 12px; }
+.slot-list { display: flex; flex-direction: column; gap: 8px; }
+.slot-row { display: grid; grid-template-columns: 62px minmax(0, 1.6fr) minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.slot-row select, .slot-row input { font: inherit; padding: 9px 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; min-width: 0; width: 100%; }
+
+/* 주간 시간표(월~일) */
+.tt { padding: 10px 8px 12px; overflow-x: auto; }
+.tt-head, .tt-body { display: grid; grid-template-columns: 30px repeat(7, minmax(42px, 1fr)); min-width: 330px; }
+.tt-head { margin-bottom: 4px; }
+.tt-day { text-align: center; font-size: .85rem; font-weight: 700; color: var(--muted); padding: 4px 0; border-radius: 8px; }
+.tt-day.today { color: var(--primary); background: #eaf2ff; }
+.tt-hours div { font-size: .7rem; color: var(--muted); text-align: right; padding-right: 6px; transform: translateY(-6px); }
+.tt-col { position: relative; border-left: 1px solid var(--line); }
+.tt-col.today { background: #f7faff; }
+.tt-line { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); }
+.tt-block { position: absolute; left: 2px; right: 2px; background: #eaf2ff; border-left: 3px solid var(--primary); border-radius: 6px;
+  padding: 3px 4px; overflow: hidden; color: var(--text); text-decoration: none; display: flex; flex-direction: column; gap: 1px; z-index: 1; }
+.tt-block:hover { background: #dbe8ff; }
+.tt-title { font-size: .72rem; font-weight: 700; line-height: 1.2; word-break: keep-all; overflow-wrap: anywhere; }
+.tt-time { font-size: .65rem; color: var(--muted); }

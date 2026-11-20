@@ -4,6 +4,7 @@ import { get } from '../../api'
 import InstallPrompt from '../../components/InstallPrompt'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import Icon from '../../components/Icon'
+import { fmtSchedules } from '../../util'
 
 /** S-02 수강생 홈 */
 export default function StudentHome() {
@@ -31,7 +32,7 @@ export default function StudentHome() {
             <Link key={c.id} to={`/student/courses/${c.id}`} className="card list-item">
               <div>
                 <div className="item-title">{c.title}</div>
-                <div className="muted small">{c.ownerName} · 내 출결 보기</div>
+                <div className="muted small">{c.ownerName}{fmtSchedules(c.schedules) && ` · ${fmtSchedules(c.schedules)}`}</div>
               </div>
               <Icon name="chevron" size={20} className="chevron" />
             </Link>
