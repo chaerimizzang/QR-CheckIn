@@ -29,7 +29,13 @@ export function AuthProvider({ children }) {
     return res.user
   }, [])
 
-  const value = useMemo(() => ({ user, login, logout }), [user, login, logout])
+  /** 이름 변경 등으로 내 정보가 바뀌면 화면(메뉴 이름)과 저장된 정보를 함께 바꾼다 */
+  const updateUser = useCallback((next) => {
+    session.save(session.token(), next)
+    setUser(next)
+  }, [])
+
+  const value = useMemo(() => ({ user, login, logout, updateUser }), [user, login, logout, updateUser])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

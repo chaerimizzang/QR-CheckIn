@@ -1,6 +1,9 @@
 
 package com.qrcheckin.user;
 
+import com.qrcheckin.common.ApiException;
+import com.qrcheckin.common.ErrorCode;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,24 +31,20 @@ public class PasswordChangeService {
             String newPassword) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
 
         if (!passwordEncoder.matches(
                 currentPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException(
-                    "현재 비밀번호가 일치하지 않습니다.");
+            throw new ApiException(ErrorCode.WRONG_PASSWORD);
         }
 
         if (newPassword == null || newPassword.length() < 8) {
-            throw new IllegalArgumentException(
-                    "새 비밀번호는 8자 이상이어야 합니다.");
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "새 비밀번호는 8자 이상이어야 해요");
         }
 
         if (passwordEncoder.matches(
                 newPassword, user.getPasswordHash())) {
-            throw new IllegalArgumentException(
-                    "기존 비밀번호와 다른 비밀번호를 입력해 주세요.");
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "지금 비밀번호와 다른 비밀번호를 입력해 주세요");
         }
 
         String encodedPassword = passwordEncoder.encode(newPassword);

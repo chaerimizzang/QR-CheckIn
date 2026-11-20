@@ -17,6 +17,7 @@ public enum ErrorCode {
 
     // 계정 (B-01)
     EMAIL_DUPLICATED(HttpStatus.CONFLICT, "이미 가입된 이메일이에요"),
+    WRONG_PASSWORD(HttpStatus.BAD_REQUEST, "현재 비밀번호가 맞지 않아요"),
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않아요"),
 
     // 교육·수강생·회차 (B-02 ~ B-05)

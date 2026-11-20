@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { get } from '../../api'
 import Icon from '../../components/Icon'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
+import AccountCard from '../../components/AccountCard'
 
 /** 관리자 프로필: 내 정보 + 개설한 교육 요약. 교육을 누르면 교육 화면으로 */
 export default function AdminProfile() {
@@ -22,6 +23,8 @@ export default function AdminProfile() {
               <div className="muted small">관리자 · {data.email}</div>
             </div>
           </div>
+
+          <AccountCard name={data.name} email={data.email} onNameChange={(name) => setData({ ...data, name })} />
 
           <div className="stat-row">
             <div className="card stat"><div className="stat-num">{data.courseCount}</div><div className="muted small">개설한 교육</div></div>

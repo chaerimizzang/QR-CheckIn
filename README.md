@@ -130,6 +130,8 @@ DB_URL='jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul' DB_PASS
 | POST | `/auth/signup` | 회원가입 (`role`: `ADMIN` / `STUDENT`) | 공개 |
 | POST | `/auth/login` | 로그인, JWT 발급 | 공개 |
 | GET | `/me` | 내 정보 | 로그인 |
+| PUT | `/me/name` | 이름 변경 `{"name":"..."}` | 로그인 |
+| POST | `/me/password` | 비밀번호 변경 (`currentPassword`, `newPassword`, `confirmPassword`) | 로그인 |
 | GET | `/courses` | 내 교육 목록 (관리자: 개설한 교육, 수강생: 등록된 교육) | 로그인 |
 | POST | `/courses` | 교육 생성 | 관리자 |
 | GET / PUT / DELETE | `/courses/{courseId}` | 교육 조회·수정·삭제 | 소유 관리자(조회는 수강생도) |

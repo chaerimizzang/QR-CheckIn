@@ -64,6 +64,19 @@ public class AuthService {
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
     }
 
+    /** 프로필에서 이름 변경. 앞뒤 공백은 지운다 */
+    @Transactional
+    public UserResponse changeName(Long userId, String name) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
+        String trimmed = name.strip();
+        if (trimmed.isEmpty()) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "이름을 입력해 주세요");
+        }
+        user.changeName(trimmed);
+        return UserResponse.from(user);
+    }
+
     private static String normalize(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
     }

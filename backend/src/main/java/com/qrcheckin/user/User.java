@@ -54,6 +54,9 @@ public class User {
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
     public String getName() { return name; }
+
+    /** 이름 변경(프로필) */
+    public void changeName(String name) { this.name = name; }
     public String getStudentNo() { return studentNo; }
     public Role getRole() { return role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
