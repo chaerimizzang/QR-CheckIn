@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post, put } from '../../api'
 import { ErrorBox, Layout, Loading, SessionBadge, StatusBadge } from '../../components/ui'
@@ -33,14 +33,42 @@ export default function SessionDetail() {
     })
   })
   const loadRoster = () => get(`/sessions/${sessionId}/attendances`).then(setRoster)
+
+  // 출결을 바꾸는 중에는 자동 갱신(5초)이 옛 데이터로 덮어쓰지 않게:
+  // 변경할 때마다 version 을 올리고, 그 전에 시작한 갱신 응답은 버린다
+  const pendingRef = useRef(0)
+  const versionRef = useRef(0)
+
+  /** 바뀐 행만 바꿔 끼우고 요약 숫자도 다시 센다(서버를 다시 부르지 않아 바로 반영) */
+  function applyRows(rows) {
+    setRoster((r) => {
+      if (!r) return r
+      const byId = new Map(rows.map((x) => [x.userId, x]))
+      const students = r.students.map((st) => (byId.has(st.userId) ? { ...st, ...byId.get(st.userId) } : st))
+      const count = (k) => students.filter((st) => st.status === k).length
+      return { ...r, students, summary: { enrolled: students.length, present: count('PRESENT'), late: count('LATE'),
+        absent: count('ABSENT'), pending: students.filter((st) => !st.status).length } }
+    })
+  }
+
+  /** 수정 이력: 열려 있는 학생은 다시 불러오고, 나머지는 캐시를 지워 다음에 열 때 새로 받는다 */
+  function refreshHistory(userIds) {
+    setHistory((prev) => {
+      const next = { ...prev }
+      userIds.forEach((id) => { if (id !== historyOpen) delete next[id] }) // 열려 있는 건 새 이력이 올 때까지 그대로
+      return next
+    })
+    if (historyOpen != null && userIds.includes(historyOpen)) fetchHistory(historyOpen)
+  }
   useEffect(() => { Promise.all([loadSession(), loadRoster()]).catch(setError) }, [sessionId])
 
   //실시간 출결 현황 자동 갱신
   useEffect(() => {
     const timer = window.setInterval(() => {
+      const v = versionRef.current
       get(`/sessions/${sessionId}/attendances`)
-        .then(setRoster)
-        .catch(setError)
+        .then((data) => { if (pendingRef.current === 0 && v === versionRef.current) setRoster(data) })
+        .catch(() => {}) // 자동 갱신 실패는 조용히 넘기고 다음 갱신에서 다시 시도
     }, 5000)
     return () => window.clearInterval(timer)
   }, [sessionId])
@@ -104,12 +132,22 @@ export default function SessionDetail() {
     } catch (err) { setError(err) }
   }
 
+  /** 출석/지각/결석 버튼 — 화면은 바로 바꾸고, 서버 응답으로 한 번 더 맞춘다. 실패하면 되돌림 */
   async function change(userId, status) {
     setError(null)
+    versionRef.current += 1
+    pendingRef.current += 1
+    applyRows([{ userId, status, source: 'MANUAL' }])
     try {
-      await put(`/sessions/${sessionId}/attendances/${userId}`, { status })
-      await loadRoster()
-    } catch (err) { setError(err) }
+      const row = await put(`/sessions/${sessionId}/attendances/${userId}`, { status })
+      applyRows([row])
+      refreshHistory([userId])
+    } catch (err) {
+      setError(err)
+      loadRoster().catch(() => {})
+    } finally {
+      pendingRef.current -= 1
+    }
   }
 
   function toggleStudent(userId) {
@@ -126,27 +164,37 @@ export default function SessionDetail() {
 
     setError(null)
     setNotice(null)
-
-    try {
-      await put(`/sessions/${sessionId}/attendances/bulk`, {userIds: selectedIds, status: bulkStatus,
-    })
-
+    const ids = selectedIds
+    versionRef.current += 1
+    pendingRef.current += 1
+    applyRows(ids.map((userId) => ({ userId, status: bulkStatus, source: 'MANUAL' })))
     setSelectedIds([])
-    await loadRoster()
-    setNotice('선택한 학생의 출결을 변경했어요')
+    try {
+      const rows = await put(`/sessions/${sessionId}/attendances/bulk`, { userIds: ids, status: bulkStatus })
+      applyRows(rows)
+      refreshHistory(ids)
+      setNotice(`${ids.length}명의 출결을 변경했어요`)
+    } catch (err) {
+      setError(err)
+      loadRoster().catch(() => {})
+    } finally {
+      pendingRef.current -= 1
+    }
+  }
+  async function fetchHistory(userId) {
+    try {
+      const data = await get(`/sessions/${sessionId}/attendances/${userId}/history`)
+      setHistory((prev) => ({ ...prev, [userId]: data }))
     } catch (err) {
       setError(err)
     }
   }
-  async function loadHistory(userId) {
+
+  /** 수정 이력 열기 — 바로 펼치고(불러오는 중 표시), 받아 오면 채운다 */
+  function loadHistory(userId) {
     setError(null)
-    try {
-      const data = await get( `/sessions/${sessionId}/attendances/${userId}/history` )
-      setHistory((prev) => ({ ...prev, [userId]: data }))
-      setHistoryOpen(userId)
-    } catch (err) {
-      setError(err)
-    }
+    setHistoryOpen(userId)
+    fetchHistory(userId)
   }
 
   if (!s || !form) return <Layout><ErrorBox error={error} /><Loading /></Layout>
@@ -159,7 +207,7 @@ export default function SessionDetail() {
 
   const filteredStudents = roster?.students.filter((student) => {
   const keyword = searchTerm.trim().toLowerCase()
-  return (student.name.toLowerCase().includes(keyword) || student.studentNo.toLowerCase().includes(keyword))
+  return (student.name ?? '').toLowerCase().includes(keyword) || (student.studentNo ?? '').toLowerCase().includes(keyword)
   }) ?? []
  
   //calculation of the percentage
@@ -349,7 +397,9 @@ export default function SessionDetail() {
 
                     {historyOpen === r.userId && (
                       <div className="roster-history small">
-                        {!history[r.userId]?.length ? (
+                        {!history[r.userId] ? (
+                          <span className="muted">불러오는 중…</span>
+                        ) : !history[r.userId].length ? (
                           <span className="muted">수정 이력이 없어요</span>
                         ) : (
                           history[r.userId].map((item) => (

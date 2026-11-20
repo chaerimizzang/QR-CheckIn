@@ -147,7 +147,7 @@ public class AttendanceService {
         }
 
         //Returning history, newest first
-         return attendanceHistoryRepository.findByAttendanceIdOrderByModifiedAtDesc(attendance.getId())
+         return attendanceHistoryRepository.findByAttendanceIdOrderByModifiedAtDescIdDesc(attendance.getId())
             .stream().map(history -> new AttendanceHistoryRow(history.getId(),history.getOldStatus(),history.getNewStatus(),
                     history.getModifiedBy().getName(),history.getModifiedAt()))
             .toList();

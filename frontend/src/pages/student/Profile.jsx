@@ -38,27 +38,28 @@ export default function StudentProfile() {
                         <div className="item-title">{c.title}</div>
                         <div className="muted small">{c.ownerName}</div>
                       </div>
-                      <div className={`rate-value${c.attendanceRate == null ? ' none' : ''}`}>
-                        {c.attendanceRate == null ? '—' : `${c.attendanceRate}%`}
+                      <div className="rate-value">
+                        <span className="muted">출석률</span> {c.attendanceRate == null ? '—' : `${c.attendanceRate}%`}
                       </div>
                     </div>
-                    <div className="rate-bar" aria-hidden="true">
-                      <span style={{ width: `${c.attendanceRate ?? 0}%` }} />
-                    </div>
-                    <div className="rate-foot small">
-                      {c.totalSessions === 0 ? (
-                        <span className="muted">아직 마감된 회차가 없어요</span>
-                      ) : (
-                        <span>
-                          출석 <b>{c.presentCount}</b> · 지각 <b>{c.lateCount}</b> · 결석 <b>{c.absentCount}</b>
-                          <span className="muted"> / {c.totalSessions}회</span>
-                          {c.convertedAbsences > c.absentCount && (
-                            <span className="muted"> · 인정 결석 {c.convertedAbsences}</span>
-                          )}
-                        </span>
-                      )}
-                      <Icon name="chevron" size={20} className="chevron" />
-                    </div>
+                    {c.totalSessions === 0 ? (
+                      <div className="rate-foot small"><span className="muted">아직 마감된 회차가 없어요</span>
+                        <Icon name="chevron" size={20} className="chevron" /></div>
+                    ) : (
+                      <>
+                        <div className="count-row">
+                          <div className="count-box"><b>{c.presentCount}</b><span>출석</span></div>
+                          <div className="count-box"><b>{c.lateCount}</b><span>지각</span></div>
+                          <div className="count-box"><b>{c.absentCount}</b><span>결석</span></div>
+                        </div>
+                        <div className="rate-foot small">
+                          <span className="muted">
+                            마감 {c.totalSessions}회{c.convertedAbsences > c.absentCount && ` · 인정 결석 ${c.convertedAbsences}`}
+                          </span>
+                          <Icon name="chevron" size={20} className="chevron" />
+                        </div>
+                      </>
+                    )}
                   </Link>
                 )
               })}

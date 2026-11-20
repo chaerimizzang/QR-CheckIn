@@ -4,5 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AttendanceHistoryRepository
         extends JpaRepository<AttendanceHistory, Long> {
-    List<AttendanceHistory> findByAttendanceIdOrderByModifiedAtDesc(Long attendanceId);
+    List<AttendanceHistory> findByAttendanceIdOrderByModifiedAtDescIdDesc(Long attendanceId);
 }
