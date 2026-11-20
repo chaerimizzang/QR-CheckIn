@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -37,11 +38,12 @@ public class AttendanceCsvService {
         // 해당 교육의 모든 출결 기록 조회
         List<Attendance> attendances =
                 attendanceCsvRepository
-                        .findBySessionCourseIdOrderBySessionSessionNoAsc(
+                        .findBySessionCourseIdOrderBySessionSessionNoAscUserStudentNoAsc(
                                 courseId);
 
+        // 엑셀이 날짜로 바꿔서 ####### 로 보이지 않도록 요일을 넣은 글자 형식으로 쓴다.
         DateTimeFormatter formatter =
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                DateTimeFormatter.ofPattern("yyyy.MM.dd (E) HH:mm", Locale.KOREAN);
 
         try (
             StringWriter writer = new StringWriter();
@@ -75,8 +77,9 @@ public class AttendanceCsvService {
                         attendance.getSession()
                                 .getScheduledAt().format(formatter),
                         status,
-                        attendance.getCheckedAt().format(formatter),
-                        attendance.getSource().name()
+                        attendance.getCheckedAt() == null
+                                ? "" : attendance.getCheckedAt().format(formatter),
+                        sourceLabel(attendance.getSource())
                 );
             }
 
@@ -90,5 +93,14 @@ public class AttendanceCsvService {
             throw new IllegalStateException(
                     "출결부 CSV 파일 생성 중 오류가 발생했습니다.", e);
         }
+    }
+
+    /** 처리 방식을 영어 코드 대신 한글로 보여 준다. */
+    static String sourceLabel(AttendanceSource source) {
+        return switch (source) {
+            case QR -> "QR 출석";
+            case SYSTEM -> "자동 결석";
+            case MANUAL -> "교수 수정";
+        };
     }
 }

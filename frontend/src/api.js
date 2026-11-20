@@ -54,3 +54,50 @@ export const get = (p) => api(p)
 export const post = (p, body) => api(p, { method: 'POST', body: body ?? {} })
 export const put = (p, body) => api(p, { method: 'PUT', body })
 export const del = (p) => api(p, { method: 'DELETE' })
+
+/** 파일 올리기(multipart) — 예: CSV 수강생 등록 */
+export async function upload(path, file, field = 'file') {
+  const form = new FormData()
+  form.append(field, file)
+  const headers = {}
+  const token = session.token()
+  if (token) headers.Authorization = `Bearer ${token}`
+  let res
+  try {
+    res = await fetch(`/api/v1${path}`, { method: 'POST', headers, body: form })
+  } catch {
+    throw new ApiError(0, { code: 'NETWORK', message: '서버에 연결할 수 없어요. 서버가 켜져 있는지 확인해 주세요.' })
+  }
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    if (res.status === 401 && token) onUnauthorized()
+    throw new ApiError(res.status, data)
+  }
+  return data
+}
+
+/** 파일 내려받기 — 로그인 토큰을 붙여 받아서 브라우저 다운로드로 저장 */
+export async function download(path, filename) {
+  const headers = {}
+  const token = session.token()
+  if (token) headers.Authorization = `Bearer ${token}`
+  let res
+  try {
+    res = await fetch(`/api/v1${path}`, { headers })
+  } catch {
+    throw new ApiError(0, { code: 'NETWORK', message: '서버에 연결할 수 없어요. 서버가 켜져 있는지 확인해 주세요.' })
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => null)
+    if (res.status === 401 && token) onUnauthorized()
+    throw new ApiError(res.status, data)
+  }
+  const blob = await res.blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
