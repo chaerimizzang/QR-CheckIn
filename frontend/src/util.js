@@ -90,3 +90,25 @@ export function nextHourLocal() {
 }
 
 const pad = (n) => String(n).padStart(2, '0')
+
+/**
+ * D-12 기기 번호: 이 브라우저에서 처음 출석할 때 임의 값을 만들어 저장해 두고 계속 같은 값을 보낸다.
+ * 같은 회차에 같은 기기로 다른 계정이 출석하는 것(대리 출석)을 서버가 막는 데 쓴다.
+ */
+const DEVICE_KEY = 'qr-checkin-device-id'
+export function getDeviceId() {
+  try {
+    let id = localStorage.getItem(DEVICE_KEY)
+    if (!id || !/^[A-Za-z0-9-]{8,64}$/.test(id)) {
+      id = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
+      localStorage.setItem(DEVICE_KEY, id)
+    }
+    return id
+  } catch {
+    // 저장소를 못 쓰는 환경(일부 사생활 보호 모드): 이번 탭에서만 쓰는 값
+    window.__qrDeviceId ||= Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
+    return window.__qrDeviceId
+  }
+}

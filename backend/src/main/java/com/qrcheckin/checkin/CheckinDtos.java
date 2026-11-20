@@ -8,6 +8,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
@@ -35,7 +36,11 @@ public final class CheckinDtos {
             @NotBlank @Size(max = 200) String token,
             @NotNull @DecimalMin("-90") @DecimalMax("90") Double latitude,
             @NotNull @DecimalMin("-180") @DecimalMax("180") Double longitude,
-            @NotNull @PositiveOrZero Double accuracy) {
+            @NotNull @PositiveOrZero Double accuracy,
+            /** D-12 기기 번호: 브라우저가 처음 한 번 만들어 저장해 두는 임의 값 */
+            @NotBlank(message = "기기 정보가 없어요. 페이지를 새로고침해 주세요")
+            @Pattern(regexp = "[A-Za-z0-9-]{8,64}", message = "기기 정보 형식이 올바르지 않아요")
+            String deviceId) {
     }
 
     public record CheckinResponse(

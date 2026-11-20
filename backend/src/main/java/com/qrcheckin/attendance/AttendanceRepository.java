@@ -9,6 +9,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     Optional<Attendance> findBySessionIdAndUserId(Long sessionId, Long userId);
 
+    /** D-12 같은 회차에 이 기기로 이미 출석한 기록 */
+    Optional<Attendance> findFirstBySessionIdAndDeviceId(Long sessionId, String deviceId);
+
     List<Attendance> findBySessionId(Long sessionId);
 
     void deleteBySessionId(Long sessionId);

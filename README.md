@@ -51,6 +51,34 @@ npm run dev      # http://localhost:5173 (API 는 8080 으로 자동 전달)
 npm run build    # 결과를 backend/src/main/resources/static 에 덮어씀
 ```
 
+## Docker로 실행 (서버 + MySQL + 터널 한 번에)
+
+JDK·MySQL·cloudflared 를 따로 설치하지 않아도 되고, 데이터는 Docker 볼륨에 저장돼 껐다 켜도 남아요.
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) 설치가 필요해요. 프로젝트 폴더에서:
+
+```powershell
+copy .env.example .env          # 처음 한 번 — .env 의 비밀번호·비밀키를 바꿔 주세요
+docker compose up -d --build    # 켜기 (처음엔 이미지·라이브러리를 받느라 몇 분)
+docker compose logs tunnel      # 휴대폰용 https://….trycloudflare.com 주소 확인
+```
+
+| 하고 싶은 것 | 명령 |
+|---|---|
+| 상태 보기 | `docker compose ps` |
+| 서버 로그 계속 보기 (Ctrl+C로 빠져나옴) | `docker compose logs -f app` |
+| 코드를 받은 뒤 다시 반영 | `git pull` → `docker compose up -d --build` |
+| 끄기 (데이터 유지) | `docker compose down` |
+| DB 직접 보기 | `docker compose exec db mysql -u qrcheckin -p qrcheckin` |
+| DB 백업 | `docker compose exec db sh -c "mysqldump -u root -p\"$MYSQL_ROOT_PASSWORD\" qrcheckin" > backup.sql` |
+| ⚠ 데이터까지 전부 삭제 | `docker compose down -v` |
+
+- 화면은 `http://localhost:8080`, 휴대폰은 터널 주소로 접속해요. 터널 주소는 켤 때마다 바뀌어요.
+- DB 도구(DBeaver, IntelliJ Database)로는 `localhost:3307` 로 접속할 수 있어요(이 컴퓨터에서만).
+- 학교 와이파이처럼 HTTPS 를 가로채는 네트워크에서는 이미지 다운로드·터널이 실패할 수 있어요(x509 오류) → 핫스팟 사용.
+- IntelliJ 로 실행하는 기존 방법(H2 파일 DB, `backend/data/`)도 그대로예요. Docker 없이 이렇게 실행해도 돼요. 두 DB 의 데이터는 서로 따로예요.
+- IntelliJ 로 실행하면서 Docker 의 MySQL 을 쓰려면: `docker compose up -d db` 로 DB 만 켜고(app 이 켜져 있으면 `docker compose stop app`),
+  실행 목록에서 **backend bootRun (Docker MySQL)** ▶. 비밀번호는 루트 `.env` 에서 읽어요. 8080 포트가 겹치니 Docker 의 app 과 동시에 켤 수 없어요.
+
 ## 백엔드 실행
 
 JDK 17 이상이 필요합니다. MySQL 없이 H2 파일 DB(`backend/data/`)로 바로 실행됩니다.
@@ -75,8 +103,9 @@ GRANT ALL ON qrcheckin.* TO 'qrcheckin'@'localhost';
 ```
 
 ```bash
-DB_PASSWORD=비밀번호 ./gradlew bootRun --args='--spring.profiles.active=mysql'
+DB_URL='jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul' DB_PASSWORD=비밀번호 ./gradlew bootRun --args='--spring.profiles.active=mysql'
 ```
+(`DB_URL` 을 안 주면 Docker 의 db 컨테이너 `localhost:3307` 에 붙어요)
 
 ### 환경 변수 (배포 시 반드시 설정)
 

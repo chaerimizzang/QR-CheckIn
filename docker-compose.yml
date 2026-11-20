@@ -1,0 +1,59 @@
+# QR-CheckIn 을 Docker 로 한 번에 실행: 서버(app) + MySQL(db) + 휴대폰용 HTTPS 터널(tunnel)
+#
+#   처음 한 번:   copy .env.example .env      (비밀번호·비밀키를 바꿔 주세요)
+#   켜기:         docker compose up -d --build
+#   터널 주소:    docker compose logs tunnel   (https://….trycloudflare.com)
+#   끄기:         docker compose down          (데이터는 남아요)
+#
+# 데이터는 db-data 볼륨에 저장돼서 껐다 켜도, 컴퓨터를 재부팅해도 유지된다.
+# (docker compose down -v 를 하면 볼륨까지 지워지니 주의)
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: qrcheckin
+      MYSQL_USER: ${DB_USER:-qrcheckin}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?.env 에 DB_PASSWORD 를 넣어 주세요}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?.env 에 DB_ROOT_PASSWORD 를 넣어 주세요}
+      TZ: Asia/Seoul
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db-data:/var/lib/mysql
+    # 이 컴퓨터에서 DB 도구(DBeaver·IntelliJ Database)로 볼 때만 쓰는 포트. 127.0.0.1 이라 외부에서는 못 붙는다
+    ports:
+      - "127.0.0.1:3307:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql
+      DB_URL: jdbc:mysql://db:3306/qrcheckin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+      DB_USER: ${DB_USER:-qrcheckin}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?.env 에 JWT_SECRET 를 넣어 주세요}
+      QR_SECRET: ${QR_SECRET:?.env 에 QR_SECRET 를 넣어 주세요}
+      TZ: Asia/Seoul
+    ports:
+      - "8080:8080"
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: on-failure:5
+    depends_on:
+      - app
+    # 계정 없는 임시 터널: 켤 때마다 주소가 바뀐다(고정 주소는 나중에 Tailscale Funnel 로)
+    command: ["tunnel", "--no-autoupdate", "--url", "http://app:8080"]
+
+volumes:
+  db-data:

@@ -35,7 +35,8 @@ public enum ErrorCode {
     SESSION_CLOSED(HttpStatus.UNPROCESSABLE_ENTITY, "출석이 마감되었어요"),
     LOW_ACCURACY(HttpStatus.UNPROCESSABLE_ENTITY, "위치 정확도가 낮아요"),
     OUT_OF_RANGE(HttpStatus.UNPROCESSABLE_ENTITY, "출석 장소에서 떨어져 있어요"),
-    ALREADY_CHECKED(HttpStatus.CONFLICT, "이미 출석했어요");
+    ALREADY_CHECKED(HttpStatus.CONFLICT, "이미 출석했어요"),
+    DEVICE_ALREADY_USED(HttpStatus.CONFLICT, "이 휴대폰으로 이미 다른 학생이 출석했어요");
 
     private final HttpStatus status;
     private final String defaultMessage;

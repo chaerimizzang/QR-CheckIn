@@ -64,6 +64,8 @@ input:focus { outline: 2px solid var(--primary); border-color: transparent; }
 input:disabled { background: #f0f2f6; color: var(--muted); }
 label.check { flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 400; }
 label.check input { width: auto; margin-top: 3px; }
+/* 체크박스: 기본 input 스타일(padding·width 100%)을 받지 않게 하고 크기 고정 */
+input[type="checkbox"] { width: 20px; height: 20px; min-width: 20px; padding: 0; margin: 0; flex-shrink: 0; accent-color: var(--primary); cursor: pointer; }
 .row-form { display: flex; gap: 8px; }
 .row-form input { flex: 1; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
@@ -129,8 +131,14 @@ tr:last-child td { border-bottom: none; }
 .summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 .summary b { font-size: 1.1rem; }
 .roster { display: flex; flex-direction: column; }
-.roster-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
-.roster-who { min-width: 0; }
+.roster-item { border-top: 1px solid var(--line); }
+.roster-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.roster-who { flex: 1; min-width: 0; }
+.roster-history { margin: -4px 0 10px 32px; padding: 8px 12px; background: #f5f7fb; border-radius: 8px; line-height: 1.7; }
+.bulk-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 12px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
+.bulk-actions { display: flex; gap: 8px; align-items: center; }
+.bulk-actions select { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+@media (max-width: 520px) { .roster-row { flex-wrap: wrap; } .roster-row .seg-sm { margin-left: 32px; } }
 .seg-sm { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
 .seg-sm button { border: none; background: #fff; font: inherit; font-size: 0.85rem; padding: 8px 10px; cursor: pointer; color: var(--muted); }
 .seg-sm button + button { border-left: 1px solid var(--line); }
@@ -179,3 +187,7 @@ tr:last-child td { border-bottom: none; }
   .qr-big { font-size: 2.4rem; }
   .topbar-right .muted { display: none; }
 }
+
+/* D-20 앱 설치 안내 */
+.install-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; border: 1px solid var(--primary); }
+.install-actions { display: flex; gap: 6px; flex-shrink: 0; }
