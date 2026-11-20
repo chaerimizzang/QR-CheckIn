@@ -1,8 +1,11 @@
-# 기본 프로필(local): H2 파일 DB(MySQL 호환 모드) — MySQL 설치 없이 바로 실행
-# MySQL로 실행: --spring.profiles.active=mysql
+# 기본 프로필(local): H2 파일 DB(MySQL 호환 모드) — MySQL·Docker 없이 바로 실행
+# MySQL(Docker)로 실행: --spring.profiles.active=mysql  (IntelliJ 실행 목록의 "backend bootRun (Docker MySQL)")
 spring:
   application:
     name: qr-checkin
+  config:
+    # 프로젝트 루트의 .env(docker compose 와 같은 파일)가 있으면 비밀번호·비밀키를 읽는다. 없으면 무시
+    import: "optional:file:../.env[.properties]"
   profiles:
     default: local
   jpa:
@@ -73,7 +76,8 @@ spring:
     activate:
       on-profile: mysql
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    # 기본값은 Docker 의 db 컨테이너(localhost:3307). docker compose 의 app 은 DB_URL 로 db:3306 을 넘긴다
+    url: ${DB_URL:jdbc:mysql://localhost:3307/qrcheckin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${DB_USER:qrcheckin}
     password: ${DB_PASSWORD:}
   jpa:

@@ -75,7 +75,9 @@ docker compose logs tunnel      # 휴대폰용 https://….trycloudflare.com 주
 - 화면은 `http://localhost:8080`, 휴대폰은 터널 주소로 접속해요. 터널 주소는 켤 때마다 바뀌어요.
 - DB 도구(DBeaver, IntelliJ Database)로는 `localhost:3307` 로 접속할 수 있어요(이 컴퓨터에서만).
 - 학교 와이파이처럼 HTTPS 를 가로채는 네트워크에서는 이미지 다운로드·터널이 실패할 수 있어요(x509 오류) → 핫스팟 사용.
-- IntelliJ 로 실행하는 기존 방법(H2 파일 DB, `backend/data/`)도 그대로 쓸 수 있어요. 두 방법의 데이터는 서로 따로예요.
+- IntelliJ 로 실행하는 기존 방법(H2 파일 DB, `backend/data/`)도 그대로예요. Docker 없이 이렇게 실행해도 돼요. 두 DB 의 데이터는 서로 따로예요.
+- IntelliJ 로 실행하면서 Docker 의 MySQL 을 쓰려면: `docker compose up -d db` 로 DB 만 켜고(app 이 켜져 있으면 `docker compose stop app`),
+  실행 목록에서 **backend bootRun (Docker MySQL)** ▶. 비밀번호는 루트 `.env` 에서 읽어요. 8080 포트가 겹치니 Docker 의 app 과 동시에 켤 수 없어요.
 
 ## 백엔드 실행
 
@@ -101,8 +103,9 @@ GRANT ALL ON qrcheckin.* TO 'qrcheckin'@'localhost';
 ```
 
 ```bash
-DB_PASSWORD=비밀번호 ./gradlew bootRun --args='--spring.profiles.active=mysql'
+DB_URL='jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul' DB_PASSWORD=비밀번호 ./gradlew bootRun --args='--spring.profiles.active=mysql'
 ```
+(`DB_URL` 을 안 주면 Docker 의 db 컨테이너 `localhost:3307` 에 붙어요)
 
 ### 환경 변수 (배포 시 반드시 설정)
 
