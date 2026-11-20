@@ -59,8 +59,12 @@ JDK·MySQL·cloudflared 를 따로 설치하지 않아도 되고, 데이터는 D
 ```powershell
 copy .env.example .env          # 처음 한 번 — .env 의 비밀번호·비밀키를 바꿔 주세요
 docker compose up -d --build    # 켜기 (처음엔 이미지·라이브러리를 받느라 몇 분)
-docker compose logs tunnel      # 휴대폰용 https://….trycloudflare.com 주소 확인
 ```
+
+**휴대폰용 HTTPS 주소** — 앱(PWA)은 설치한 주소에 묶이므로 고정 주소를 권장해요.
+
+- 고정 주소(권장): [Tailscale](https://tailscale.com/download) 설치·로그인 후 `tailscale funnel --bg localhost:8080` 한 번 → `https://노트북이름.….ts.net` (재부팅해도 유지)
+- 임시 주소: `docker compose --profile tunnel up -d` → `docker compose logs tunnel` 의 `https://….trycloudflare.com` (켤 때마다 바뀜)
 
 | 하고 싶은 것 | 명령 |
 |---|---|
@@ -72,7 +76,7 @@ docker compose logs tunnel      # 휴대폰용 https://….trycloudflare.com 주
 | DB 백업 | `docker compose exec db sh -c "mysqldump -u root -p\"$MYSQL_ROOT_PASSWORD\" qrcheckin" > backup.sql` |
 | ⚠ 데이터까지 전부 삭제 | `docker compose down -v` |
 
-- 화면은 `http://localhost:8080`, 휴대폰은 터널 주소로 접속해요. 터널 주소는 켤 때마다 바뀌어요.
+- 화면은 `http://localhost:8080`, 휴대폰은 위의 HTTPS 주소로 접속해요.
 - DB 도구(DBeaver, IntelliJ Database)로는 `localhost:3307` 로 접속할 수 있어요(이 컴퓨터에서만).
 - 학교 와이파이처럼 HTTPS 를 가로채는 네트워크에서는 이미지 다운로드·터널이 실패할 수 있어요(x509 오류) → 핫스팟 사용.
 - IntelliJ 로 실행하는 기존 방법(H2 파일 DB, `backend/data/`)도 그대로예요. Docker 없이 이렇게 실행해도 돼요. 두 DB 의 데이터는 서로 따로예요.

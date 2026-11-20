@@ -1,8 +1,9 @@
-# QR-CheckIn 을 Docker 로 한 번에 실행: 서버(app) + MySQL(db) + 휴대폰용 HTTPS 터널(tunnel)
+# QR-CheckIn 을 Docker 로 한 번에 실행: 서버(app) + MySQL(db) (+ 선택: 임시 HTTPS 터널 tunnel)
 #
 #   처음 한 번:   copy .env.example .env      (비밀번호·비밀키를 바꿔 주세요)
 #   켜기:         docker compose up -d --build
-#   터널 주소:    docker compose logs tunnel   (https://….trycloudflare.com)
+#   고정 주소:    tailscale funnel --bg localhost:8080   (처음 한 번, https://노트북.….ts.net)
+#   임시 주소:    docker compose --profile tunnel up -d → docker compose logs tunnel
 #   끄기:         docker compose down          (데이터는 남아요)
 #
 # 데이터는 db-data 볼륨에 저장돼서 껐다 켜도, 컴퓨터를 재부팅해도 유지된다.
@@ -52,7 +53,9 @@ services:
     restart: on-failure:5
     depends_on:
       - app
-    # 계정 없는 임시 터널: 켤 때마다 주소가 바뀐다(고정 주소는 나중에 Tailscale Funnel 로)
+    # 임시 터널(켤 때마다 주소가 바뀜) — 기본으로는 안 켜진다. 고정 주소는 Tailscale Funnel 사용
+    # 필요할 때만: docker compose --profile tunnel up -d
+    profiles: ["tunnel"]
     command: ["tunnel", "--no-autoupdate", "--url", "http://app:8080"]
 
 volumes:
