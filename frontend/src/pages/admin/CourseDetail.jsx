@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
 import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal } from '../../util'
+import StudentCsvTools from '../../components/StudentCsvTools'
 import AttendanceStatistics from './AttendanceStatistics'
 import Icon from '../../components/Icon'
 
@@ -113,6 +114,7 @@ export default function CourseDetail() {
             <input type="email" placeholder="수강생이 가입한 이메일" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <button className="btn btn-primary">+ 추가</button>
           </form>
+          <StudentCsvTools course={course} onDone={load} onError={setError} />
           {!students ? <Loading /> : students.length === 0 ? (
             <Empty>수강생이 먼저 회원가입한 뒤, 그 이메일로 추가할 수 있어요.</Empty>
           ) : (

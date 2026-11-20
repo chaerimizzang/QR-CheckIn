@@ -1,8 +1,11 @@
 
 package com.qrcheckin.course;
 
-import java.io.InputStreamReader;
-import java.io.PushbackReader;
+import java.io.StringReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.qrcheckin.auth.AuthUser;
+import com.qrcheckin.common.ApiException;
+import com.qrcheckin.common.ErrorCode;
 import com.qrcheckin.user.Role;
 import com.qrcheckin.user.User;
 
@@ -52,22 +57,13 @@ public class StudentCsvService {
         int successCount = 0;
 
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("CSV 파일이 비어 있습니다.");
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "CSV 파일이 비어 있어요");
         }
 
         try (
-            InputStreamReader inputReader = new InputStreamReader(
-                    file.getInputStream(), StandardCharsets.UTF_8);
-
-            PushbackReader reader = new PushbackReader(inputReader, 1)
+            // 엑셀 기본 'CSV(쉼표로 분리)'는 한글을 CP949 로 저장한다 → UTF-8 이 아니면 CP949 로 읽는다
+            StringReader reader = new StringReader(decode(file.getBytes()))
         ) {
-
-            // CSV 파일 맨 앞의 UTF-8 BOM 제거
-            int firstChar = reader.read();
-
-            if (firstChar != '\uFEFF' && firstChar != -1) {
-                reader.unread(firstChar);
-            }
 
             try (CSVParser parser = CSVFormat.DEFAULT.builder()
                     .setHeader()
@@ -79,8 +75,8 @@ public class StudentCsvService {
                 // CSV 필수 열 확인
                 if (!parser.getHeaderMap().keySet().containsAll(
                         List.of("학번", "이름", "연락처"))) {
-                    throw new IllegalArgumentException(
-                            "CSV 첫 줄에는 학번,이름,연락처가 필요합니다.");
+                    throw new ApiException(ErrorCode.VALIDATION_FAILED,
+                            "CSV 첫 줄에는 학번,이름,연락처가 필요해요");
                 }
 
                 for (CSVRecord record : parser) {
@@ -179,15 +175,30 @@ public class StudentCsvService {
                 }
             }
 
+        } catch (ApiException e) {
+            throw e;
         } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "CSV 파일을 읽는 중 오류가 발생했습니다: "
-                            + e.getMessage(), e);
+            throw new ApiException(ErrorCode.VALIDATION_FAILED,
+                    "CSV 파일을 읽지 못했어요. 쉼표(,)로 구분된 CSV 파일인지 확인해 주세요");
         }
 
         return new StudentCsvResult(
                 successCount,
                 failures.size(),
                 failures);
+    }
+
+    /** UTF-8(BOM 포함)로 읽고, UTF-8 이 아니면 CP949(엑셀 한글 기본)로 읽는다 */
+    static String decode(byte[] bytes) {
+        String text;
+        try {
+            text = StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes)).toString();
+        } catch (CharacterCodingException e) {
+            text = new String(bytes, Charset.forName("MS949"));
+        }
+        return text.startsWith("\uFEFF") ? text.substring(1) : text;
     }
 }
