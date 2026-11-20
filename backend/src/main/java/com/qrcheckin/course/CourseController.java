@@ -1,5 +1,7 @@
 package com.qrcheckin.course;
 
+import com.qrcheckin.schedule.CourseSetupService;
+
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -31,7 +33,11 @@ public class CourseController {
     private final CourseService courseService;
     private final EnrollmentService enrollmentService;
 
-    public CourseController(CourseService courseService, EnrollmentService enrollmentService) {
+    private final CourseSetupService courseSetupService;
+
+    public CourseController(CourseService courseService, EnrollmentService enrollmentService,
+                            CourseSetupService courseSetupService) {
+        this.courseSetupService = courseSetupService;
         this.courseService = courseService;
         this.enrollmentService = enrollmentService;
     }
@@ -50,7 +56,7 @@ public class CourseController {
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
     public CourseResponse create(@Valid @RequestBody CourseRequest req, @AuthenticationPrincipal AuthUser user) {
-        return courseService.create(req, user);
+        return courseSetupService.create(req, user); // 요일·시간을 넣으면 시간표 + 회차까지 한 번에
     }
 
     @PutMapping("/{courseId}")

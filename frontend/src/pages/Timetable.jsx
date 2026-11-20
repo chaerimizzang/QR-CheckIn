@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom'
 import { get } from '../api'
 import { useAuth } from '../auth'
 import { Empty, ErrorBox, Layout, Loading } from '../components/ui'
-import { DAYS, DAY_LABEL, fmtSlot, fromMinutes, toMinutes } from '../util'
+import { DAY_LABEL, WEEKDAYS as DAYS, fmtSlot, fromMinutes, toMinutes } from '../util'
 
 const HOUR_PX = 52
 
-/** 주간 시간표(월~일) — 내 교육(관리자: 개설한 교육, 수강생: 수강 중인 교육)의 시간표를 한 화면에 */
+/** 주간 시간표(월~금) — 내 교육(관리자: 개설한 교육, 수강생: 수강 중인 교육)의 시간표를 한 화면에 */
 export default function Timetable() {
   const { user } = useAuth()
   const [courses, setCourses] = useState(null)
@@ -34,7 +34,7 @@ export default function Timetable() {
 
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i)
   const top = (min) => ((min - startHour * 60) / 60) * HOUR_PX
-  const today = DAYS[(new Date().getDay() + 6) % 7]
+  const today = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'][new Date().getDay()]
 
   return (
     <Layout title="시간표">

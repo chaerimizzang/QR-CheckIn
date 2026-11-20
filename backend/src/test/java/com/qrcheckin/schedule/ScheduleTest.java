@@ -146,6 +146,40 @@ class ScheduleTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void 교육을_만들_때_요일과_시간을_고르면_회차까지_만들어진다() throws Exception {
+        String prof = login("cprof@t.com", "ADMIN");
+
+        // 월·수 09:00~10:30, 11월 한 달 → 오늘(11/18)부터: 11/18 수, 11/23 월, 11/25 수, 11/30 월
+        String body = "{\"title\":\"자료구조\",\"startDate\":\"2026-11-01\",\"endDate\":\"2026-11-30\","
+                + "\"schedule\":{\"days\":[\"WEDNESDAY\",\"MONDAY\"],\"startTime\":\"09:00\",\"endTime\":\"10:30\"}}";
+        long c = idOf(call(post("/api/v1/courses"), prof, body)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.schedules.length()").value(2))
+                .andExpect(jsonPath("$.schedules[0].dayOfWeek").value("MONDAY"))
+                .andExpect(jsonPath("$.schedules[0].durationMinutes").value(90)));
+        call(get("/api/v1/courses/" + c + "/sessions"), prof, null)
+                .andExpect(jsonPath("$.length()").value(4))
+                .andExpect(jsonPath("$[0].scheduledAt").value("2026-11-18T09:00:00"))
+                .andExpect(jsonPath("$[3].scheduledAt").value("2026-11-30T09:00:00"));
+
+        // 요일·시간 없이 만들면 지금처럼 교육만 생긴다
+        long plain = idOf(call(post("/api/v1/courses"), prof, "{\"title\":\"세미나\"}").andExpect(status().isCreated()));
+        call(get("/api/v1/courses/" + plain + "/sessions"), prof, null).andExpect(jsonPath("$.length()").value(0));
+
+        // 주말·기간 없음·끝 시간이 더 이름 → 거절, 교육도 만들어지지 않는다
+        call(post("/api/v1/courses"), prof, "{\"title\":\"주말반\",\"startDate\":\"2026-11-01\",\"endDate\":\"2026-11-30\","
+                + "\"schedule\":{\"days\":[\"SATURDAY\"],\"startTime\":\"09:00\",\"endTime\":\"10:00\"}}")
+                .andExpect(status().isBadRequest());
+        call(post("/api/v1/courses"), prof, "{\"title\":\"기간없음\","
+                + "\"schedule\":{\"days\":[\"MONDAY\"],\"startTime\":\"09:00\",\"endTime\":\"10:00\"}}")
+                .andExpect(status().isBadRequest());
+        call(post("/api/v1/courses"), prof, "{\"title\":\"거꾸로\",\"startDate\":\"2026-11-01\",\"endDate\":\"2026-11-30\","
+                + "\"schedule\":{\"days\":[\"MONDAY\"],\"startTime\":\"10:00\",\"endTime\":\"09:00\"}}")
+                .andExpect(status().isBadRequest());
+        call(get("/api/v1/courses"), prof, null).andExpect(jsonPath("$.length()").value(2));
+    }
+
     // ---- 도우미 ----
 
     private ResultActions call(MockHttpServletRequestBuilder req, String token, String body) throws Exception {

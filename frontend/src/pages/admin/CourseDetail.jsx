@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { del, get, post } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
-import { fmtDateTime, fmtSchedules, nextHourLocal } from '../../util'
+import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal } from '../../util'
 import ScheduleEditor from '../../components/ScheduleEditor'
 import AttendanceStatistics from './AttendanceStatistics'
 import Icon from '../../components/Icon'
@@ -75,7 +75,7 @@ export default function CourseDetail() {
       {notice && <div className="alert alert-ok">{notice}</div>}
       <p className="muted small course-meta">
         {fmtSchedules(course.schedules) || '시간표 미정'}
-        {course.startDate && ` · ${course.startDate} ~ ${course.endDate ?? ''}`}
+        {fmtPeriod(course.startDate, course.endDate) && ` · ${fmtPeriod(course.startDate, course.endDate)}`}
       </p>
 
       <div className="tabs">

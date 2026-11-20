@@ -66,6 +66,12 @@ public class ScheduleService {
         Course course = courseService.getOwnedCourse(courseId, admin);
         List<ScheduleSlot> sorted = req.slots().stream().sorted(ScheduleSlot.ORDER).toList();
         for (ScheduleSlot s : sorted) {
+            if (!ScheduleDtos.isWeekday(s.dayOfWeek())) {
+                throw new ApiException(ErrorCode.VALIDATION_FAILED, "수업 요일은 월~금만 고를 수 있어요");
+            }
+            if (s.durationMinutes() < 10 || s.durationMinutes() > 600) {
+                throw new ApiException(ErrorCode.VALIDATION_FAILED, "수업 시간은 10분 ~ 10시간이어야 해요");
+            }
             if (!s.endTime().isAfter(s.startTime())) {
                 throw new ApiException(ErrorCode.VALIDATION_FAILED,
                         dayLabel(s.dayOfWeek()) + "요일 수업이 자정을 넘어가요. 시작 시간이나 길이를 확인해 주세요");
@@ -106,7 +112,10 @@ public class ScheduleService {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, "끝나는 날짜를 정해 주세요(교육 종료일 또는 직접 입력)");
         }
         if (to.isBefore(from)) {
-            throw new ApiException(ErrorCode.VALIDATION_FAILED, "끝나는 날짜가 시작 날짜보다 빨라요");
+            if (req != null && req.from() != null) {
+                throw new ApiException(ErrorCode.VALIDATION_FAILED, "끝나는 날짜가 시작 날짜보다 빨라요");
+            }
+            return new GenerateResult(0, 0, from, to); // 교육 기간이 이미 끝남 — 만들 회차 없음
         }
         if (from.plusDays(MAX_GENERATE_DAYS).isBefore(to)) {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, "한 번에 1년까지만 만들 수 있어요");

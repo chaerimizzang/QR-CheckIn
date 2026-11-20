@@ -40,6 +40,28 @@ public final class ScheduleDtos {
                 Comparator.comparing(ScheduleSlot::dayOfWeek).thenComparing(ScheduleSlot::startTime);
     }
 
+    /** 평일(월~금)만 수업 요일로 쓸 수 있다 */
+    public static boolean isWeekday(DayOfWeek d) {
+        return d != DayOfWeek.SATURDAY && d != DayOfWeek.SUNDAY;
+    }
+
+    /**
+     * 교육 만들 때 쓰는 간단한 주간 계획: 고른 요일(월~금)마다 같은 시간(시작~끝)에 수업.
+     * 예: {"days":["MONDAY","WEDNESDAY"],"startTime":"09:00","endTime":"10:30"}
+     */
+    public record WeeklyPlan(
+            @NotNull @Size(min = 1, max = 5, message = "수업 요일을 1개 이상 골라 주세요") List<@NotNull DayOfWeek> days,
+            @NotNull(message = "시작 시간을 넣어 주세요") @JsonFormat(pattern = "HH:mm") LocalTime startTime,
+            @NotNull(message = "끝나는 시간을 넣어 주세요") @JsonFormat(pattern = "HH:mm") LocalTime endTime) {
+
+        /** 요일마다 한 칸씩 — 길이 = 끝 - 시작 */
+        public List<ScheduleSlot> toSlots() {
+            int minutes = (int) java.time.Duration.between(startTime, endTime).toMinutes();
+            return days.stream().distinct().sorted()
+                    .map(d -> new ScheduleSlot(d, startTime, minutes)).toList();
+        }
+    }
+
     /** 시간표 전체 교체(비우면 시간표 삭제) */
     public record ScheduleRequest(
             @NotNull @Size(max = 14, message = "시간표는 14칸까지 넣을 수 있어요") List<@Valid ScheduleSlot> slots) {

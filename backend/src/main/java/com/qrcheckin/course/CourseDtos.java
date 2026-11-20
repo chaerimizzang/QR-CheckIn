@@ -3,11 +3,13 @@ package com.qrcheckin.course;
 import java.util.List;
 
 import com.qrcheckin.schedule.ScheduleDtos.ScheduleSlot;
+import com.qrcheckin.schedule.ScheduleDtos.WeeklyPlan;
 
 import java.time.LocalDate;
 
 import com.qrcheckin.user.User;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -17,11 +19,15 @@ public final class CourseDtos {
     private CourseDtos() {
     }
 
-    /** B-02 교육 생성·수정 */
+    /**
+     * B-02 교육 생성·수정.
+     * schedule(선택, 만들 때만 사용): 수업 요일(월~금)·시작~끝 시간 → 시간표 저장 + 회차 자동 생성
+     */
     public record CourseRequest(
             @NotBlank @Size(max = 100) String title,
             LocalDate startDate,
-            LocalDate endDate) {
+            LocalDate endDate,
+            @Valid WeeklyPlan schedule) {
     }
 
     /** schedules: 주간 시간표(월요일부터 정렬) */
