@@ -274,3 +274,17 @@ tr:last-child td { border-bottom: none; }
 .export-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .export-row .card-title { margin-bottom: 2px; }
 .table-card:not(.csv-fail) th, .table-card:not(.csv-fail) td { white-space: nowrap; }
+
+/* 프로필 — 계정(이름·비밀번호 변경) */
+.account-card { margin-bottom: 18px; }
+.account-title { margin: 0 0 8px; font-size: 1rem; }
+.account-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); min-height: 48px; }
+.account-rows .account-row:first-child { border-top: none; }
+.account-label { width: 64px; flex-shrink: 0; color: var(--muted); font-size: 0.9rem; }
+.account-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-edit { flex: 1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.account-edit input { flex: 1; min-width: 140px; padding: 8px 10px; }
+.account-pw { border-top: 1px solid var(--line); padding-top: 12px; }
+.account-pw label .muted { font-weight: 400; }
+.account-value.wrap { white-space: normal; }
+.push-banner { border-color: var(--line); }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { get, post } from '../../api'
 import InstallPrompt from '../../components/InstallPrompt'
+import { PushBanner } from '../../components/PushCard'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import Icon from '../../components/Icon'
 import { fmtSchedules, monthEnd, monthStart } from '../../util'
@@ -56,6 +57,7 @@ export default function Courses() {
       actions={<button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>+ 교육 만들기</button>}
     >
       <InstallPrompt />
+      <PushBanner />
       <ErrorBox error={error} />
       {showForm && (
         <form className="card" onSubmit={create}>

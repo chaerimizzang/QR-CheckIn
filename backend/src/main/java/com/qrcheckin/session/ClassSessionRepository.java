@@ -18,4 +18,8 @@ public interface ClassSessionRepository extends JpaRepository<ClassSession, Long
 
     /** 마감 스케줄러용: 마감 시각이 지난 OPEN 회차 */
     List<ClassSession> findByStatusAndClosedAtLessThanEqual(SessionStatus status, LocalDateTime now);
+
+    /** 곧 시작하는데 아직 알림을 보내지 않은 회차(from < scheduledAt <= to) */
+    List<ClassSession> findByStatusAndScheduledAtGreaterThanAndScheduledAtLessThanEqualAndReminderSentAtIsNull(
+            SessionStatus status, LocalDateTime from, LocalDateTime to);
 }

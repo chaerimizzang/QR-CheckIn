@@ -21,6 +21,10 @@ public final class AuthDtos {
             @NotNull Role role) {
     }
 
+    public record ChangeNameRequest(
+            @NotBlank(message = "이름을 입력해 주세요") @Size(max = 50, message = "이름은 50자 이내로 입력해 주세요") String name) {
+    }
+
     public record LoginRequest(
             @NotBlank @Email String email,
             @NotBlank String password) {

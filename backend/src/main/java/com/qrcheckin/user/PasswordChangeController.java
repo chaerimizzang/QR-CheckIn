@@ -1,6 +1,9 @@
 
 package com.qrcheckin.user;
 
+import com.qrcheckin.common.ApiException;
+import com.qrcheckin.common.ErrorCode;
+
 import com.qrcheckin.auth.AuthUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -24,7 +27,7 @@ public class PasswordChangeController {
     public record ChangePasswordRequest(
             @NotBlank String currentPassword,
             @NotBlank
-            @Size(min = 8) String newPassword,
+            @Size(min = 8, max = 64, message = "새 비밀번호는 8~64자여야 해요") String newPassword,
             @NotBlank String confirmPassword
     ) {}
 
@@ -34,14 +37,9 @@ public class PasswordChangeController {
             @AuthenticationPrincipal AuthUser user,
             @Valid @RequestBody ChangePasswordRequest request) {
 
-        if (user == null) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
-        }
-
+        // 오류는 ApiException 으로 던져야 500 이 아니라 400 + 안내 문구로 응답된다
         if (!request.newPassword().equals(request.confirmPassword())) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "새 비밀번호가 일치하지 않습니다.");
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "새 비밀번호 두 칸이 서로 달라요");
         }
 
         passwordChangeService.changePassword(

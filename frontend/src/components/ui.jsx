@@ -9,7 +9,6 @@ import Icon from './Icon'
 const COMMON = [
   { to: '/profile', label: '프로필', icon: 'user', match: (p) => p === '/profile' },
   { to: '/timetable', label: '시간표', icon: 'calendar', match: (p) => p === '/timetable' },
-  { to: '/me/password', label: '비밀번호 변경', icon: 'lock', match: (p) => p === '/me/password' },
 ]
 const MENU = {
   ADMIN: [{ to: '/admin', label: '홈', icon: 'home', match: (p) => p === '/admin' }, ...COMMON],

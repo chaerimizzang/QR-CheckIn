@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { post, session, setUnauthorizedHandler } from './api'
+import { disablePushOnLogout } from './push'
 
 const AuthContext = createContext(null)
 
@@ -9,6 +10,7 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate()
 
   const logout = useCallback(() => {
+    disablePushOnLogout() // 토큰을 지우기 전에 이 기기의 수업 알림을 끊는다
     session.clear()
     setUser(null)
   }, [])
@@ -29,7 +31,13 @@ export function AuthProvider({ children }) {
     return res.user
   }, [])
 
-  const value = useMemo(() => ({ user, login, logout }), [user, login, logout])
+  /** 이름 변경 등으로 내 정보가 바뀌면 화면(메뉴 이름)과 저장된 정보를 함께 바꾼다 */
+  const updateUser = useCallback((next) => {
+    session.save(session.token(), next)
+    setUser(next)
+  }, [])
+
+  const value = useMemo(() => ({ user, login, logout, updateUser }), [user, login, logout, updateUser])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
