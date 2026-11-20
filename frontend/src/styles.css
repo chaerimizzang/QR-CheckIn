@@ -191,3 +191,46 @@ tr:last-child td { border-bottom: none; }
 /* D-20 앱 설치 안내 */
 .install-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; border: 1px solid var(--primary); }
 .install-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* 학생 프로필 */
+.section-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.profile-card { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.profile-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 1.3rem; font-weight: 700; flex-shrink: 0; }
+.profile-info { min-width: 0; }
+.profile-name { font-size: 1.15rem; font-weight: 700; }
+.rate-card { display: block; color: inherit; text-decoration: none; }
+.rate-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.rate-value { font-size: 1.4rem; font-weight: 800; white-space: nowrap; color: var(--primary); }
+.rate-value.none { color: var(--muted); }
+.rate-bar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 10px 0 8px; }
+.rate-bar span { display: block; height: 100%; border-radius: 99px; background: var(--primary); transition: width .4s; }
+.rate-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+/* PNG 아이콘 */
+.ico { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+.ico-inline { margin-left: 2px; vertical-align: -2px; }
+.link-ico { display: inline-flex; align-items: center; gap: 4px; }
+.icon-btn { display: inline-flex; align-items: center; }
+.btn .ico { margin-right: 4px; vertical-align: -3px; }
+
+/* 왼쪽 메뉴 */
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, .35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 200; }
+.drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(280px, 82vw); background: #fff; z-index: 201;
+  transform: translateX(-100%); transition: transform .22s ease; display: flex; flex-direction: column;
+  padding: calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom)); box-shadow: 4px 0 24px rgba(0,0,0,.08); }
+.drawer.open { transform: translateX(0); }
+.drawer-head { display: flex; align-items: center; gap: 12px; padding: 6px 6px 16px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.drawer-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: #fff; display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
+.drawer-who { flex: 1; min-width: 0; }
+.drawer-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drawer-items { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.drawer-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; color: var(--text); text-decoration: none; font: inherit; background: none; border: none; text-align: left; cursor: pointer; width: 100%; }
+.drawer-item:hover { background: var(--bg); }
+.drawer-item.active { background: #eaf2ff; color: var(--primary); font-weight: 600; }
+.drawer-logout { color: var(--muted); border-top: 1px solid var(--line); border-radius: 0; margin-top: 8px; padding-top: 14px; }
+@media (prefers-reduced-motion: reduce) { .drawer, .drawer-backdrop { transition: none; } }
+/* 관리자 프로필 숫자 */
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { text-align: center; padding: 14px; }
+.stat-num { font-size: 1.6rem; font-weight: 800; color: var(--primary); }

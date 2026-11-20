@@ -4,6 +4,7 @@ import { del, get, post } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
 import { fmtDateTime, nextHourLocal } from '../../util'
 import AttendanceStatistics from './AttendanceStatistics'
+import Icon from '../../components/Icon'
 
 /** A-03 교육 상세: 회차 목록 + 수강생 목록 */
 export default function CourseDetail() {
@@ -94,7 +95,7 @@ export default function CourseDetail() {
                       {s.latitude == null && <span className="warn"> · 장소 미지정</span>}
                     </div>
                   </div>
-                  <span className="chevron">›</span>
+                  <Icon name="chevron" size={20} className="chevron" />
                 </Link>
               ))}
             </div>

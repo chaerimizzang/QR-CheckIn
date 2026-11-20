@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post, put } from '../../api'
 import { ErrorBox, Layout, Loading, SessionBadge, StatusBadge } from '../../components/ui'
 import { POOR_ACCURACY_M, STATUS_LABEL, fmtDateTime, fmtTime, getPosition } from '../../util'
+import Icon from '../../components/Icon'
 
 /** A-04 회차 설정 + A-06 회차 출결 현황·수정 */
 export default function SessionDetail() {
@@ -239,7 +240,7 @@ export default function SessionDetail() {
                 : <span className="warn small">아직 지정 안 됨</span>}
               {editable && (
                 <button type="button" className="btn btn-sm" onClick={useMyLocation} disabled={locating != null}>
-                  {locating == null ? '📍 현재 위치로 지정'
+                  {locating == null ? <><Icon name="pin" size={16} /> 현재 위치로 지정</>
                     : typeof locating === 'number' ? `정확도 높이는 중… (약 ${locating}m)` : '위치 확인 중…'}
                 </button>
               )}

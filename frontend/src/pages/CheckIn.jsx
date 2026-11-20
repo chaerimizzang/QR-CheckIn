@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { post } from '../api'
 import { Layout } from '../components/ui'
 import { STATUS_LABEL, fmtTime, getDeviceId, getPosition } from '../util'
+import Icon from '../components/Icon'
 
 /**
  * QR 에 담긴 주소(/check-in?t=토큰). 열리자마자 위치를 받아 출석 인증을 보낸다(B-07).
@@ -65,7 +66,7 @@ export default function CheckIn() {
 
         {step === 'done' && result && (
           <div className="checkin-state ok">
-            <div className="big-icon">✓</div>
+            <div className="big-icon"><Icon name="check-ok" size={40} /></div>
             <h2>{STATUS_LABEL[result.status]} 완료</h2>
             <p className="checkin-time">{fmtTime(result.checkedAt)}</p>
             <p className="muted">{result.courseTitle} · {result.sessionNo}회차</p>
@@ -75,7 +76,7 @@ export default function CheckIn() {
 
         {step === 'failed' && error && (
           <div className={`checkin-state ${error.code === 'ALREADY_CHECKED' ? 'ok' : 'fail'}`}>
-            <div className="big-icon">{error.code === 'ALREADY_CHECKED' ? '✓' : '!'}</div>
+            <div className="big-icon"><Icon name={error.code === 'ALREADY_CHECKED' ? 'check-bad' : 'alert-bad'} size={40} /></div>
             <h2>{error.message}</h2>
             {error.detail?.hint && <p className="hint">{error.detail.hint}</p>}
             <div className="btn-col">

@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { get, post } from '../../api'
 import InstallPrompt from '../../components/InstallPrompt'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
+import Icon from '../../components/Icon'
 
 /** A-02 교육 목록 */
 export default function Courses() {
   const [courses, setCourses] = useState(null)
   const [title, setTitle] = useState('')
   const [error, setError] = useState(null)
-  const [showForm, setShowForm] = useState(false)
+  // 왼쪽 메뉴의 '교육 만들기'는 /admin?new=1 로 와서 입력창이 바로 열린다
+  const [params, setParams] = useSearchParams()
+  const showForm = params.get('new') === '1'
+  const setShowForm = (open) => setParams(open ? { new: '1' } : {}, { replace: true })
 
   const load = () => get('/courses').then(setCourses).catch(setError)
   useEffect(() => { load() }, [])
@@ -41,7 +45,7 @@ export default function Courses() {
         </form>
       )}
       {!courses ? <Loading /> : courses.length === 0 ? (
-        <Empty>아직 만든 교육이 없어요. 오른쪽 위 <b>교육 만들기</b>로 시작해 보세요.</Empty>
+        <Empty>아직 만든 교육이 없어요. <b>교육 만들기</b>로 시작해 보세요.</Empty>
       ) : (
         <div className="list">
           {courses.map((c) => (
@@ -52,7 +56,7 @@ export default function Courses() {
                   수강생 {c.studentCount}명{c.startDate && ` · ${c.startDate} ~ ${c.endDate || ''}`}
                 </div>
               </div>
-              <span className="chevron">›</span>
+              <Icon name="chevron" size={20} className="chevron" />
             </Link>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Icon from './Icon'
 
 const DISMISS_KEY = 'qr-install-dismissed'
 
@@ -67,7 +68,7 @@ export default function InstallPrompt() {
       <div className="card install-card">
         <div>
           <b>홈 화면에 추가하면 앱처럼 쓸 수 있어요</b>
-          <div className="muted small">Safari 아래쪽 공유 버튼(□↑) → ‘홈 화면에 추가’</div>
+          <div className="muted small link-ico">Safari 아래쪽 공유 버튼 <Icon name="share" size={16} /> → ‘홈 화면에 추가’</div>
         </div>
         <div className="install-actions">
           <button className="btn btn-sm" onClick={dismiss}>닫기</button>
