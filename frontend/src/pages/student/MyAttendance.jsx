@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { get } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge, StatusBadge } from '../../components/ui'
 import { fmtDateTime, fmtTime } from '../../util'
@@ -7,6 +7,8 @@ import { fmtDateTime, fmtTime } from '../../util'
 /** S-04 내 출결 */
 export default function MyAttendance() {
   const { courseId } = useParams()
+  const [params] = useSearchParams()
+  const back = params.get('from') === 'profile' ? '/profile' : '/student'
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   useEffect(() => { get(`/me/attendances?courseId=${courseId}`).then(setData).catch(setError) }, [courseId])
@@ -14,7 +16,7 @@ export default function MyAttendance() {
   const count = (st) => data?.sessions.filter((s) => s.status === st).length ?? 0
 
   return (
-    <Layout back="/student" title={data?.courseTitle}>
+    <Layout back={back} title={data?.courseTitle}>
       <ErrorBox error={error} />
       {!data ? <Loading /> : (
         <>

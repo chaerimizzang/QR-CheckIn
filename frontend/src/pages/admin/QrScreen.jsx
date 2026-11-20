@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { get } from '../../api'
 import { fmtSeconds } from '../../util'
+import Icon from '../../components/Icon'
 
 /**
  * A-05 QR 출석 진행(프로젝터 화면).
@@ -51,7 +52,7 @@ export default function QrScreen() {
   return (
     <div className="qr-page">
       <div className="qr-top">
-        <Link to={`/admin/sessions/${sessionId}`} className="link-btn">← 회차 화면</Link>
+        <Link to={`/admin/sessions/${sessionId}`} className="link-btn link-ico"><Icon name="back" size={16} /> 회차 화면</Link>
         <button className="link-btn" onClick={fullscreen}>전체 화면</button>
       </div>
 

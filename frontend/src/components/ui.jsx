@@ -1,73 +1,102 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { SESSION_LABEL, STATUS_LABEL } from '../util'
+import Icon from './Icon'
 
-export function Layout({ title, back, children, actions }) {
+
+/** 왼쪽 메뉴 항목 — 홈(관리자: 내 교육·교육 만들기 / 수강생: 내 교육·QR 스캔)·프로필·시간표·비밀번호 변경 */
+const COMMON = [
+  { to: '/profile', label: '프로필', icon: 'user', match: (p) => p === '/profile' },
+  { to: '/timetable', label: '시간표', icon: 'calendar', match: (p) => p === '/timetable' },
+  { to: '/me/password', label: '비밀번호 변경', icon: 'lock', match: (p) => p === '/me/password' },
+]
+const MENU = {
+  ADMIN: [{ to: '/admin', label: '홈', icon: 'home', match: (p) => p === '/admin' }, ...COMMON],
+  STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' }, ...COMMON],
+}
+
+function SideMenu({ open, onClose }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { pathname, search } = useLocation()
+  const query = new URLSearchParams(search)
+
+  // Esc 로 닫기, 열려 있는 동안 뒤 화면 스크롤 막기
+  useEffect(() => {
+    if (!open) return undefined
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [open, onClose])
+
+  if (!user) return null
+  const items = MENU[user.role] ?? []
+  return (
+    <>
+      <div className={`drawer-backdrop${open ? ' open' : ''}`} onClick={onClose} aria-hidden="true" />
+      <nav className={`drawer${open ? ' open' : ''}`} aria-label="메뉴" aria-hidden={!open}>
+        <div className="drawer-head">
+          <div className="drawer-avatar" aria-hidden="true">{user.name?.slice(0, 1)}</div>
+          <div className="drawer-who">
+            <div className="drawer-name">{user.name}</div>
+            <div className="muted small">{user.role === 'ADMIN' ? '관리자' : '수강생'}</div>
+          </div>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="메뉴 닫기" tabIndex={open ? 0 : -1}>
+            <Icon name="close" size={22} />
+          </button>
+        </div>
+        <div className="drawer-items">
+          {items.map((it) => {
+            const active = it.match(pathname, query)
+            return (
+              <Link key={it.to} to={it.to} onClick={onClose} tabIndex={open ? 0 : -1}
+                className={`drawer-item${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
+                <Icon name={active ? `${it.icon}-active` : it.icon} size={20} />
+                {it.label}
+              </Link>
+            )
+          })}
+        </div>
+        <button type="button" className="drawer-item drawer-logout" tabIndex={open ? 0 : -1}
+          onClick={() => { onClose(); logout(); navigate('/login') }}>
+          <Icon name="logout" size={20} />
+          로그아웃
+        </button>
+      </nav>
+    </>
+  )
+}
+
+export function Layout({ title, back, children, actions }) {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+
+  // 화면이 바뀌면 메뉴 닫기
+  useEffect(() => { setMenuOpen(false) }, [location.pathname, location.search])
+
   return (
     <div className="page">
       <header className="topbar">
         <div className="topbar-left">
+          {user && (
+            <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="메뉴 열기" aria-expanded={menuOpen}>
+              <Icon name="menu" size={22} />
+            </button>
+          )}
           {back && (
             <button className="icon-btn" onClick={() => navigate(back)} aria-label="뒤로">
-              ←
+              <Icon name="back" size={22} />
             </button>
           )}
           <Link to="/" className="brand">QR 출석</Link>
         </div>
-        {user && (
-          <div className="topbar-right">
-
-<div style={{ position: 'relative' }}>
-  <button
-    type="button"
-    className="link-btn"
-    onClick={() => setMenuOpen(!menuOpen)}
-    aria-expanded={menuOpen}
-    style={{ color: '#64748b' }}
-  >
-    {user.name} · {user.role === 'ADMIN' ? '관리자' : '수강생'} ▾
-  </button>
-
-  {menuOpen && (
-    <div
-      style={{
-        position: 'absolute',
-        top: '100%',
-        right: 0,
-        marginTop: 8,
-        minWidth: 180,
-        padding: 8,
-        background: 'white',
-        border: '1px solid #e2e8f0',
-        borderRadius: 10,
-        boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-        zIndex: 100,
-      }}
-    >
-      <Link
-        to="/me/password"
-        onClick={() => setMenuOpen(false)}
-        style={{
-          display: 'block',
-          padding: '10px 12px',
-          color: '#1e293b',
-          textDecoration: 'none',
-        }}
-      >
-        🔒 비밀번호 변경
-      </Link>
-    </div>
-  )}
-</div>
-
-            <button className="link-btn" onClick={() => { logout(); navigate('/login') }}>로그아웃</button>
-          </div>
-        )}
       </header>
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <main className="content">
         {(title || actions) && (
           <div className="page-head">

@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
-import { fmtDateTime, nextHourLocal } from '../../util'
+import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal } from '../../util'
 import AttendanceStatistics from './AttendanceStatistics'
+import Icon from '../../components/Icon'
 
 /** A-03 교육 상세: 회차 목록 + 수강생 목록 */
 export default function CourseDetail() {
@@ -70,6 +71,10 @@ export default function CourseDetail() {
     <Layout back="/admin" title={course.title}>
       <ErrorBox error={error} />
       {notice && <div className="alert alert-ok">{notice}</div>}
+      <p className="muted small course-meta">
+        {fmtSchedules(course.schedules) || '시간표 미정'}
+        {fmtPeriod(course.startDate, course.endDate) && ` · ${fmtPeriod(course.startDate, course.endDate)}`}
+      </p>
 
       <div className="tabs">
   <button className={tab === 'sessions' ? 'on' : ''} onClick={() => setTab('sessions')}>회차 {sessions?.length ?? ''}</button>
@@ -94,7 +99,7 @@ export default function CourseDetail() {
                       {s.latitude == null && <span className="warn"> · 장소 미지정</span>}
                     </div>
                   </div>
-                  <span className="chevron">›</span>
+                  <Icon name="chevron" size={20} className="chevron" />
                 </Link>
               ))}
             </div>

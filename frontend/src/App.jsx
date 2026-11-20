@@ -10,6 +10,8 @@ import CourseDetail from './pages/admin/CourseDetail'
 import SessionDetail from './pages/admin/SessionDetail'
 import StudentHome from './pages/student/Home'
 import MyAttendance from './pages/student/MyAttendance'
+import Profile from './pages/Profile'
+import Timetable from './pages/Timetable'
 
 // 카메라·QR 라이브러리는 그 화면을 열 때만 내려받는다
 const QrScreen = lazy(() => import('./pages/admin/QrScreen'))
@@ -52,6 +54,9 @@ export default function App() {
 
       {/* 수강생 S-02 ~ S-04 */}
       <Route path="/student" element={<RequireRole role="STUDENT"><StudentHome /></RequireRole>} />
+      <Route path="/profile" element={<RequireRole><Profile /></RequireRole>} />
+      <Route path="/timetable" element={<RequireRole><Timetable /></RequireRole>} />
+      <Route path="/student/profile" element={<Navigate to="/profile" replace />} />
       <Route path="/student/courses/:courseId" element={<RequireRole role="STUDENT"><MyAttendance /></RequireRole>} />
       <Route path="/scan" element={<RequireRole role="STUDENT"><Scan /></RequireRole>} />
       {/* QR 에 담긴 주소. 기본 카메라 앱으로 찍어도 여기로 열린다 */}

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { get } from '../../api'
 import InstallPrompt from '../../components/InstallPrompt'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
+import Icon from '../../components/Icon'
+import { fmtSchedules } from '../../util'
 
 /** S-02 수강생 홈 */
 export default function StudentHome() {
@@ -14,10 +16,13 @@ export default function StudentHome() {
     <Layout>
       <InstallPrompt />
       <Link to="/scan" className="scan-hero">
-        <span className="scan-icon">▣</span>
+        <Icon name="scan-white" size={44} className="scan-icon" />
         <span>QR 스캔해서 출석하기</span>
       </Link>
-      <h2 className="section-title">내 교육</h2>
+      <div className="section-row">
+        <h2 className="section-title">내 교육</h2>
+        <Link to="/profile" className="small link-ico">내 출석률 보기 <Icon name="chevron-primary" size={14} /></Link>
+      </div>
       <ErrorBox error={error} />
       {!courses ? <Loading /> : courses.length === 0 ? (
         <Empty>아직 등록된 교육이 없어요. 강사님께 가입한 이메일을 알려 드리고 수강생 등록을 요청해 주세요.</Empty>
@@ -27,9 +32,9 @@ export default function StudentHome() {
             <Link key={c.id} to={`/student/courses/${c.id}`} className="card list-item">
               <div>
                 <div className="item-title">{c.title}</div>
-                <div className="muted small">{c.ownerName} · 내 출결 보기</div>
+                <div className="muted small">{c.ownerName}{fmtSchedules(c.schedules) && ` · ${fmtSchedules(c.schedules)}`}</div>
               </div>
-              <span className="chevron">›</span>
+              <Icon name="chevron" size={20} className="chevron" />
             </Link>
           ))}
         </div>

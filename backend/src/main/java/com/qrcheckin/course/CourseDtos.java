@@ -1,9 +1,15 @@
 package com.qrcheckin.course;
 
+import java.util.List;
+
+import com.qrcheckin.schedule.ScheduleDtos.ScheduleSlot;
+import com.qrcheckin.schedule.ScheduleDtos.WeeklyPlan;
+
 import java.time.LocalDate;
 
 import com.qrcheckin.user.User;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -13,18 +19,24 @@ public final class CourseDtos {
     private CourseDtos() {
     }
 
-    /** B-02 교육 생성·수정 */
+    /**
+     * B-02 교육 생성·수정.
+     * schedules(선택, 만들 때만 사용): [수업 요일(월~금) + 시작~끝 시간] 묶음 여러 개
+     *   → 시간표 저장 + 오늘부터 종료일까지 회차 자동 생성. 예: 월·수 09:00~10:30 + 금 13:00~15:00
+     */
     public record CourseRequest(
             @NotBlank @Size(max = 100) String title,
             LocalDate startDate,
-            LocalDate endDate) {
+            LocalDate endDate,
+            @Size(max = 10, message = "수업 시간은 10개까지 넣을 수 있어요") List<@Valid WeeklyPlan> schedules) {
     }
 
+    /** schedules: 주간 시간표(월요일부터 정렬) */
     public record CourseResponse(Long id, String title, LocalDate startDate, LocalDate endDate,
-                                 String ownerName, long studentCount) {
-        public static CourseResponse of(Course c, long studentCount) {
+                                 String ownerName, long studentCount, List<ScheduleSlot> schedules) {
+        public static CourseResponse of(Course c, long studentCount, List<ScheduleSlot> schedules) {
             return new CourseResponse(c.getId(), c.getTitle(), c.getStartDate(), c.getEndDate(),
-                    c.getOwner().getName(), studentCount);
+                    c.getOwner().getName(), studentCount, schedules);
         }
     }
 
