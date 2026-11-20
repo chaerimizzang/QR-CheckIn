@@ -99,6 +99,10 @@ class StudentCsvTest {
                     .andReturn().getResponse().getContentAsByteArray();
             String text = new String(body, StandardCharsets.UTF_8);
             assertThat(text).startsWith("﻿").contains("최학생"); // 엑셀에서 한글이 깨지지 않게 BOM
+            if (path.equals("/attendance/export")) {
+                // 날짜는 엑셀이 바꾸지 않는 글자 형식, 처리 방식은 한글
+                assertThat(text).contains("2026.11.20 (금) 13:00").contains("교수 수정").doesNotContain("MANUAL");
+            }
         }
     }
 
