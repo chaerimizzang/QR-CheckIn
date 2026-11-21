@@ -231,7 +231,9 @@ public class AttendanceRequestService {
         }
         RequestEvidence e = evidences.findById(requestId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "첨부한 파일이 없어요"));
-        e.getData().length(); // 트랜잭션 안에서 파일 내용을 읽어 둔다
+        if (e.getData() == null) { // 트랜잭션 안에서 파일 내용을 읽어 둔다
+            throw new ApiException(ErrorCode.NOT_FOUND, "첨부한 파일이 없어요");
+        }
         return e;
     }
 
