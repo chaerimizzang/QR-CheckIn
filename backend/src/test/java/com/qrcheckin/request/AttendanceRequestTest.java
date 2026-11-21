@@ -209,6 +209,26 @@ class AttendanceRequestTest {
     }
 
     @Test
+    void 교수가_인정할_상태를_고른다() throws Exception {
+        // 학생은 사유만 낸다(종류는 공결로 들어옴) → 교수가 출석으로 인정
+        long id = idOf(submit(closed1, "EXCUSE", null, "QR을 찍었는데 결석으로 나왔어요", null));
+        call(post("/api/v1/requests/" + id + "/approve"), prof, "{\"status\":\"ABSENT\"}")
+                .andExpect(status().isBadRequest());
+        call(post("/api/v1/requests/" + id + "/approve"), prof, "{\"status\":\"PRESENT\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requestedStatus").value("PRESENT"));
+        call(get("/api/v1/sessions/" + closed1 + "/attendances"), prof, null)
+                .andExpect(jsonPath("$.students[0].status").value("PRESENT"));
+
+        // 아직 열리지 않은 수업은 공결로만
+        long future = idOf(submit(scheduled, "EXCUSE", null, "예비군", null));
+        call(post("/api/v1/requests/" + future + "/approve"), prof, "{\"status\":\"PRESENT\"}")
+                .andExpect(status().isBadRequest());
+        call(post("/api/v1/requests/" + future + "/approve"), prof, "{\"status\":\"EXCUSED\"}")
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void 교수가_직접_공결로_바꿀_수_있다() throws Exception {
         call(put("/api/v1/sessions/" + closed1 + "/attendances/" + kimId), prof, "{\"status\":\"EXCUSED\"}")
                 .andExpect(status().isOk())

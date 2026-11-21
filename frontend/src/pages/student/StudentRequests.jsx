@@ -8,15 +8,8 @@ import { STATUS_LABEL, fmtTime } from '../../util'
 
 const MAX_MB = 5
 
-/** 이 날짜에 할 수 있는 신청(서버 규칙과 같게). 정정은 항상 '출석으로' */
-function allowed(o) {
-  if (!o || o.pending) return { excuse: false, correction: false }
-  const st = o.myStatus
-  return {
-    excuse: st !== 'PRESENT' && st !== 'EXCUSED',
-    correction: o.sessionStatus !== 'SCHEDULED' && st !== 'PRESENT' && st !== 'EXCUSED',
-  }
-}
+/** 신청할 수 있는 날짜: 이미 출석·공결이 아니고 처리 중인 신청이 없는 날(앞으로의 수업도 미리 신청 가능) */
+const allowed = (o) => !!o && !o.pending && o.myStatus !== 'PRESENT' && o.myStatus !== 'EXCUSED' 
 
 function dateLabel(o) {
   const st = o.myStatus ? STATUS_LABEL[o.myStatus] : o.sessionStatus === 'SCHEDULED' ? '예정' : '미정'
@@ -32,7 +25,6 @@ export default function StudentRequests() {
   const [courseId, setCourseId] = useState(params.get('course') ?? '')
   const [options, setOptions] = useState(null)
   const [sessionId, setSessionId] = useState(params.get('session') ?? '')
-  const [type, setType] = useState('')
   const [reason, setReason] = useState('')
   const [file, setFile] = useState(null)
   const [openId, setOpenId] = useState(null)
@@ -54,21 +46,12 @@ export default function StudentRequests() {
 
   // 신청할 수 있는 날짜만, 가까운 날짜부터
   const dates = useMemo(() => (options ?? [])
-    .filter((o) => { const a = allowed(o); return a.excuse || a.correction })
+    .filter(allowed)
     .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt)), [options])
   const option = dates.find((o) => String(o.sessionId) === String(sessionId))
-  const can = allowed(option)
-
-  // 날짜를 고르면 할 수 있는 종류가 하나뿐일 때 자동으로 고른다
-  useEffect(() => {
-    if (!option) { setType(''); return }
-    if ((type === 'EXCUSE' && !can.excuse) || (type === 'CORRECTION' && !can.correction) || !type) {
-      setType(can.correction ? (option.myStatus === 'ABSENT' && can.excuse ? '' : 'CORRECTION') : 'EXCUSE')
-    }
-  }, [option]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function reset() {
-    setSessionId(''); setType(''); setReason(''); setFile(null)
+    setSessionId(''); setReason(''); setFile(null)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -92,9 +75,8 @@ export default function StudentRequests() {
     e.preventDefault()
     setBusy(true); setError(null); setDone('')
     try {
-      await upload(`/sessions/${sessionId}/requests`, file, 'file', {
-        type, reason, requestedStatus: type === 'CORRECTION' ? 'PRESENT' : undefined,
-      })
+      // 종류는 나누지 않는다 — 무엇으로 인정할지(공결·출석)는 교수가 승인할 때 정한다
+      await upload(`/sessions/${sessionId}/requests`, file, 'file', { type: 'EXCUSE', reason })
       setDone('신청했어요. 교수님이 확인하면 알림으로 알려 드려요')
       reset(); setFormOpen(false); setParams({}, { replace: true })
       load()
@@ -130,21 +112,10 @@ export default function StudentRequests() {
           </div>
 
           {option && (
-            <div className="segmented req-types">
-              <button type="button" className={type === 'EXCUSE' ? 'on' : ''} disabled={!can.excuse} onClick={() => setType('EXCUSE')}>
-                공결 <small>사유 있는 결석</small>
-              </button>
-              <button type="button" className={type === 'CORRECTION' ? 'on' : ''} disabled={!can.correction} onClick={() => setType('CORRECTION')}>
-                출석 정정 <small>출석했는데 잘못 처리됨</small>
-              </button>
-            </div>
-          )}
-
-          {type && (
             <>
               <textarea className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} required
                 aria-label="사유"
-                placeholder={type === 'EXCUSE' ? '사유를 적어 주세요 (예: 독감으로 병원 진료)' : '어떻게 된 건지 적어 주세요 (예: 13:02에 QR을 찍었어요)'} />
+                placeholder="사유를 적어 주세요 (예: 독감으로 병원 진료 / 13:02에 QR을 찍었는데 결석으로 나왔어요)" />
               <div className="req-form-foot">
                 <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={pickFile} hidden />
                 <button type="button" className="link-btn small req-file" onClick={() => fileRef.current?.click()}>

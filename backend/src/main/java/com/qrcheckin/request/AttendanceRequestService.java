@@ -184,13 +184,24 @@ public class AttendanceRequestService {
         return requests.countBySessionCourseOwnerIdAndStatus(admin.id(), RequestStatus.PENDING);
     }
 
+    /**
+     * 승인. 학생은 사유만 내고, 무엇으로 인정할지(공결·출석·지각)는 교수가 정한다(비우면 신청한 상태 = 공결).
+     * 아직 열리지 않은 회차는 공결로만 인정할 수 있다.
+     */
     @Transactional
-    public RequestRow approve(Long requestId, AuthUser admin, String comment) {
+    public RequestRow approve(Long requestId, AuthUser admin, String comment, AttendanceStatus result) {
         AttendanceRequest r = ownedByProfessor(requestId, admin);
         requirePending(r);
+        AttendanceStatus to = result == null ? r.getRequestedStatus() : result;
+        if (to == AttendanceStatus.ABSENT) {
+            throw notAllowed("결석으로는 인정할 수 없어요. 인정하지 않으려면 반려해 주세요");
+        }
+        if (to != AttendanceStatus.EXCUSED && r.getSession().getStatus() == SessionStatus.SCHEDULED) {
+            throw notAllowed("아직 열리지 않은 수업은 공결로만 인정할 수 있어요");
+        }
         // 교수가 직접 바꾸는 것과 같은 경로 → 수정 이력이 남고, 마감 스케줄러가 덮어쓰지 않는다
-        attendanceService.changeStatus(r.getSession().getId(), r.getStudent().getId(), r.getRequestedStatus(), admin);
-        r.approve(users.getReferenceById(admin.id()), blankToNull(comment), LocalDateTime.now(clock));
+        attendanceService.changeStatus(r.getSession().getId(), r.getStudent().getId(), to, admin);
+        r.approve(users.getReferenceById(admin.id()), to, blankToNull(comment), LocalDateTime.now(clock));
         return RequestRow.from(r);
     }
 

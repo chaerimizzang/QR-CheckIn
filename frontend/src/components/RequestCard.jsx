@@ -3,7 +3,8 @@ import { session } from '../api'
 import { STATUS_LABEL, fmtDateTime } from '../util'
 import Icon from './Icon'
 
-export const TYPE_LABEL = { EXCUSE: '공결', CORRECTION: '출석 정정' }
+const RESULT_LABEL = { PRESENT: '출석으로', LATE: '지각으로', EXCUSED: '공결로', ABSENT: '결석으로' }
+
 export const REQUEST_STATUS = {
   PENDING: { label: '대기', cls: 'req-pending' },
   APPROVED: { label: '승인', cls: 'req-approved' },
@@ -48,7 +49,7 @@ export default function RequestCard({ r, showStudent, open, onToggle, children, 
         <span className="req-main">
           <span className="req-line1">
             {showStudent ? <b>{r.studentName}</b> : <b>{fmtDay(r.scheduledAt)}</b>}
-            <span className="req-type">{TYPE_LABEL[r.type]}</span>
+            {r.status === 'APPROVED' && <span className="req-type">{RESULT_LABEL[r.requestedStatus]} 인정</span>}
           </span>
           <span className="req-line2 muted small">
             {showStudent ? `${fmtDay(r.scheduledAt)} · ${r.courseTitle}` : r.courseTitle}
@@ -62,7 +63,7 @@ export default function RequestCard({ r, showStudent, open, onToggle, children, 
           <dl className="req-dl">
             {showStudent && <><dt>학번</dt><dd>{r.studentNo || '-'}</dd></>}
             <dt>수업</dt><dd>{r.courseTitle} · {fmtDateTime(r.scheduledAt)}</dd>
-            <dt>요청</dt><dd>{before} → <b>{STATUS_LABEL[r.requestedStatus]}</b></dd>
+            <dt>출결</dt><dd>{r.status === 'APPROVED' ? <>{before} → <b>{STATUS_LABEL[r.requestedStatus]}</b></> : before}</dd>
             <dt>사유</dt><dd className="req-reason">{r.reason}</dd>
             {r.hasEvidence && (
               <><dt>증빙</dt><dd>

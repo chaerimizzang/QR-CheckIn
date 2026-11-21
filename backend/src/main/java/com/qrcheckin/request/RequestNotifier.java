@@ -22,8 +22,13 @@ public class RequestNotifier {
         this.pushService = pushService;
     }
 
-    static String typeLabel(RequestType type) {
-        return type == RequestType.EXCUSE ? "공결" : "출석 정정";
+    static String result(com.qrcheckin.attendance.AttendanceStatus s) {
+        return switch (s) {
+            case PRESENT -> "출석으로";
+            case LATE -> "지각으로";
+            case EXCUSED -> "공결로";
+            case ABSENT -> "결석으로";
+        };
     }
 
     /** 회차 번호 대신 수업 날짜: "11/20(금)" */
@@ -33,15 +38,15 @@ public class RequestNotifier {
 
     /** 학생이 신청 → 교수에게 */
     public void submitted(RequestRow r, Long professorId) {
-        send(List.of(professorId), new PushMessage("출석 인정 신청이 왔어요 [" + r.courseTitle() + "]",
-                r.studentName() + " · " + day(r.scheduledAt()) + " " + typeLabel(r.type()) + " 신청",
+        send(List.of(professorId), new PushMessage("출석 인정 신청 [" + r.courseTitle() + "]",
+                r.studentName() + " · " + day(r.scheduledAt()) + " 수업",
                 "/requests", "request-" + r.id()));
     }
 
     /** 교수가 승인·반려 → 학생에게 */
     public void reviewed(RequestRow r) {
         boolean ok = r.status() == RequestStatus.APPROVED;
-        String body = day(r.scheduledAt()) + " " + typeLabel(r.type()) + " 신청이 " + (ok ? "승인" : "반려") + "됐어요"
+        String body = day(r.scheduledAt()) + " 수업 " + (ok ? result(r.requestedStatus()) + " 인정됐어요" : "신청이 반려됐어요")
                 + (r.reviewComment() != null ? " · " + r.reviewComment() : "");
         send(List.of(r.studentId()), new PushMessage("출석 인정 " + (ok ? "승인" : "반려") + " [" + r.courseTitle() + "]",
                 body, "/requests", "request-" + r.id()));

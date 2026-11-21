@@ -95,12 +95,12 @@ public class AttendanceRequestController {
         return new PendingCount(service.pendingCount(user));
     }
 
-    @Operation(summary = "승인 — 출결이 신청한 상태로 바뀌고 수정 이력이 남는다")
+    @Operation(summary = "승인 — status(EXCUSED 공결·PRESENT 출석·LATE 지각)로 출결이 바뀌고 수정 이력이 남는다")
     @PostMapping("/requests/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
     public RequestRow approve(@PathVariable Long id, @Valid @RequestBody(required = false) ReviewRequest req,
                               @AuthenticationPrincipal AuthUser user) {
-        RequestRow row = service.approve(id, user, req == null ? null : req.comment());
+        RequestRow row = service.approve(id, user, req == null ? null : req.comment(), req == null ? null : req.status());
         notifier.reviewed(row);
         return row;
     }

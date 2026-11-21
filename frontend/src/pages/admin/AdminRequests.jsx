@@ -32,14 +32,14 @@ export default function AdminRequests() {
     setError(null)
   }
 
-  async function review(r, action) {
+  async function review(r, action, status) {
     if (action === 'reject' && !comment.trim()) {
       setError({ message: '반려 사유를 적어 주세요' })
       return
     }
     setBusy(true); setError(null)
     try {
-      const updated = await post(`/requests/${r.id}/${action}`, { comment: comment.trim() || null })
+      const updated = await post(`/requests/${r.id}/${action}`, { comment: comment.trim() || null, status: status ?? null })
       setList((prev) => prev.map((x) => (x.id === r.id ? updated : x)))
       setOpenId(null); setComment('')
     } catch (err) { setError(err); load() } finally { setBusy(false) }
@@ -70,7 +70,10 @@ export default function AdminRequests() {
                   <input placeholder="의견 (반려할 때 필수)" maxLength={300} value={comment}
                     onChange={(e) => setComment(e.target.value)} disabled={busy} />
                   <div className="req-actions">
-                    <button className="btn btn-primary" disabled={busy} onClick={() => review(r, 'approve')}>승인</button>
+                    <button className="btn btn-primary" disabled={busy} onClick={() => review(r, 'approve', 'EXCUSED')}>공결로 인정</button>
+                    {r.sessionStatus !== 'SCHEDULED' && (
+                      <button className="btn btn-primary" disabled={busy} onClick={() => review(r, 'approve', 'PRESENT')}>출석으로 인정</button>
+                    )}
                     <button className="btn" disabled={busy} onClick={() => review(r, 'reject')}>반려</button>
                   </div>
                 </div>

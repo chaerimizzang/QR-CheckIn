@@ -91,7 +91,9 @@ public class AttendanceRequest {
         this.createdAt = now;
     }
 
-    public void approve(User reviewer, String comment, LocalDateTime now) {
+    /** 승인: 교수가 고른 상태(공결·출석·지각)로 인정한다 */
+    public void approve(User reviewer, AttendanceStatus result, String comment, LocalDateTime now) {
+        this.requestedStatus = result;
         review(RequestStatus.APPROVED, reviewer, comment, now);
     }
 
