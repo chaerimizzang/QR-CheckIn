@@ -360,3 +360,7 @@ select.input {
   background-repeat: no-repeat; background-position: right 17px center; background-size: 18px; /* 카드의 > 아이콘(오른쪽 여백 16px, 20px 칸)과 가운데를 맞춤 */
 }
 select.input:disabled { background-color: #f0f2f6; color: var(--muted); cursor: not-allowed; }
+
+/* 내 출결: 출결 상태를 크게 */
+.badge-lg { font-size: 0.95rem; padding: 5px 14px; }
+.att-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }

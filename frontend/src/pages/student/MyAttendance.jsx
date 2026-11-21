@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { get } from '../../api'
-import { Empty, ErrorBox, Layout, Loading, SessionBadge, StatusBadge } from '../../components/ui'
-import { WARNING, fmtDateTime, fmtTime } from '../../util'
+import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
+import { STATUS_LABEL, WARNING, fmtDateTime } from '../../util'
 
 /** 출석 인정을 신청할 수 있는 회차: 결석·지각이거나, 아직 열리지 않은(미리 공결) 회차 */
 const canRequest = (s) => s.status === 'ABSENT' || s.status === 'LATE' || (!s.status && s.sessionStatus !== 'OPEN')
@@ -50,9 +50,10 @@ export default function MyAttendance() {
                     <div className="item-title">{s.sessionNo}회차</div>
                     <div className="muted small">{fmtDateTime(s.scheduledAt)}</div>
                   </div>
-                  <div className="right">
-                    {s.status ? <StatusBadge status={s.status} /> : <SessionBadge status={s.sessionStatus} />}
-                    {s.checkedAt && <div className="muted small">{fmtTime(s.checkedAt)}</div>}
+                  <div className="right att-right">
+                    {s.status
+                      ? <span className={`badge badge-lg badge-${s.status.toLowerCase()}`}>{STATUS_LABEL[s.status]}</span>
+                      : <SessionBadge status={s.sessionStatus} />}
                     {canRequest(s) && (
                       <Link className="link-btn small" to={`/requests?new=1&course=${courseId}&session=${s.sessionId}`}>
                         출석 인정 신청
