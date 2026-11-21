@@ -6,15 +6,16 @@ import { SESSION_LABEL, STATUS_LABEL } from '../util'
 import Icon from './Icon'
 
 
-/** 왼쪽 메뉴 항목 — 홈(관리자: 내 교육·교육 만들기 / 수강생: 내 교육·QR 스캔)·출석 인정·프로필·시간표 */
+/** 왼쪽 메뉴 항목 — 홈(관리자: 내 교육·교육 만들기 / 수강생: 내 교육·QR 스캔)·프로필·시간표·출석 인정 */
 const COMMON = [
-  { to: '/requests', label: '출석 인정', icon: 'clipboard-check', match: (p) => p === '/requests', count: true },
   { to: '/profile', label: '프로필', icon: 'user', match: (p) => p === '/profile' },
   { to: '/timetable', label: '시간표', icon: 'calendar', match: (p) => p === '/timetable' },
+  { to: '/requests', label: '출석 인정', icon: 'clipboard-check', match: (p) => p === '/requests', count: true },
 ]
 const MENU = {
   ADMIN: [{ to: '/admin', label: '홈', icon: 'home', match: (p) => p === '/admin' }, ...COMMON],
-  STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' }, ...COMMON],
+  STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' },
+    { to: '/attendance', label: '출석 현황', icon: 'chart-column', match: (p) => p === '/attendance' }, ...COMMON],
 }
 
 function SideMenu({ open, onClose }) {

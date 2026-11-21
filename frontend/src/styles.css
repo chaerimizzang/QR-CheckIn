@@ -351,3 +351,12 @@ select.input:focus, textarea.input:focus { outline: 2px solid var(--primary); bo
 .req-types button:disabled { opacity: 0.4; cursor: not-allowed; }
 .req-form-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .req-form-foot .link-btn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 선택 상자: 기본 화살표 대신 안쪽으로 들인 화살표 */
+select.input {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; background-size: 16px;
+}
+select.input:disabled { background-color: #f0f2f6; color: var(--muted); cursor: not-allowed; }

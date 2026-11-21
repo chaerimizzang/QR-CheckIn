@@ -86,7 +86,7 @@ public class AbsenceWarningService {
         List<Outgoing> out = new ArrayList<>();
         out.add(new Outgoing(r.userId(), new PushMessage(
                 (level == Level.FAIL ? "F 기준 초과 " : "결석 경고 ") + "[" + course.getTitle() + "]", detail,
-                "/student/courses/" + course.getId() + "?from=profile", "warning-" + course.getId())));
+                "/student/courses/" + course.getId() + "?from=attendance", "warning-" + course.getId())));
         if (level == Level.DANGER || level == Level.FAIL) {
             out.add(new Outgoing(course.getOwner().getId(), new PushMessage(
                     "결석 위험 학생 [" + course.getTitle() + "]", r.name() + " · " + detail,

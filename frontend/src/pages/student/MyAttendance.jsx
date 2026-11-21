@@ -11,7 +11,8 @@ const canRequest = (s) => s.status === 'ABSENT' || s.status === 'LATE' || (!s.st
 export default function MyAttendance() {
   const { courseId } = useParams()
   const [params] = useSearchParams()
-  const back = params.get('from') === 'profile' ? '/profile' : '/student'
+  const from = params.get('from')
+  const back = from === 'attendance' || from === 'profile' ? '/attendance' : '/student'
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   const [warning, setWarning] = useState(null)

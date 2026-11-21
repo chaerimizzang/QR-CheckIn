@@ -25,7 +25,7 @@ export default function StudentHome() {
       </Link>
       <div className="section-row">
         <h2 className="section-title">내 교육</h2>
-        <Link to="/profile" className="small link-ico">내 출석률 보기 <Icon name="chevron-primary" size={14} /></Link>
+        <Link to="/attendance" className="small link-ico">내 출석률 보기 <Icon name="chevron-primary" size={14} /></Link>
       </div>
       <ErrorBox error={error} />
       <SemesterPicker sem={sem} />
