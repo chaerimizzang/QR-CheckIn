@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
-import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal } from '../../util'
+import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal, WARNING } from '../../util'
 import StudentCsvTools from '../../components/StudentCsvTools'
 import AttendanceStatistics from './AttendanceStatistics'
 import Icon from '../../components/Icon'
@@ -115,6 +115,15 @@ export default function CourseDetail() {
             <button className="btn btn-primary">+ 추가</button>
           </form>
           <StudentCsvTools course={course} onDone={load} onError={setError} />
+          {(() => {
+            const risky = attendanceRates?.students?.filter((r) => r.warningLevel === 'DANGER' || r.warningLevel === 'FAIL') ?? []
+            return risky.length > 0 && (
+              <div className="warn-chip warn-banner warn-danger">
+                <b>결석 위험 학생 {risky.length}명</b> {risky.map((r) => r.name).join(', ')}
+                <span className="small"> · 전체 {attendanceRates.plannedSessions}회 중 인정 결석 {attendanceRates.allowedAbsences}회를 넘으면 F 기준이에요</span>
+              </div>
+            )
+          })()}
           {!students ? <Loading /> : students.length === 0 ? (
             <Empty>수강생이 먼저 회원가입한 뒤, 그 이메일로 추가할 수 있어요.</Empty>
           ) : (
@@ -131,6 +140,7 @@ export default function CourseDetail() {
                       <th>공결</th>
                       <th>환산 결석</th>
                       <th>출석률</th>
+                      <th>F 기준</th>
                       <th />
                     </tr>
                   </thead>
@@ -155,6 +165,11 @@ export default function CourseDetail() {
                           {rate
                             ? `${rate.attendanceRate}%`
                             : '-'}
+                        </td>
+                        <td>
+                          {WARNING[rate?.warningLevel]
+                            ? <span className={`warn-tag ${WARNING[rate.warningLevel].cls}`}>{WARNING[rate.warningLevel].label}</span>
+                            : rate?.remainingAbsences != null ? <span className="muted small">F까지 결석 {rate.remainingAbsences + 1}회</span> : '-'}
                         </td>
 
                         <td className="right">

@@ -24,6 +24,10 @@ public record StudentProfileResponse(
             long absentCount,
             long excusedCount,
             long convertedAbsences,
-            Double attendanceRate) {
+            Double attendanceRate,
+            /** F 기준까지 더 결석할 수 있는 수(회차가 없으면 null) */
+            Integer remainingAbsences,
+            /** NONE·SAFE·WARNING·DANGER·FAIL */
+            com.qrcheckin.attendance.AbsenceRule.Level warningLevel) {
     }
 }

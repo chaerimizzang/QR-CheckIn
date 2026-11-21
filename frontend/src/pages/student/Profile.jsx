@@ -4,6 +4,7 @@ import { get } from '../../api'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import AccountCard from '../../components/AccountCard'
 import { PushCard } from '../../components/PushCard'
+import { WARNING } from '../../util'
 import Icon from '../../components/Icon'
 
 /** 학생 프로필: 내 정보 + 수강 중인 수업별 출석률. 수업을 누르면 회차별 출결(S-04)로 */
@@ -47,6 +48,11 @@ export default function StudentProfile() {
                         <span className="muted">출석률</span> {c.attendanceRate == null ? '—' : `${c.attendanceRate}%`}
                       </div>
                     </div>
+                    {WARNING[c.warningLevel] && (
+                      <div className={`warn-chip ${WARNING[c.warningLevel].cls}`}>
+                        <b>{WARNING[c.warningLevel].label}</b> {WARNING[c.warningLevel].text}
+                      </div>
+                    )}
                     {c.totalSessions === 0 ? (
                       <div className="rate-foot small"><span className="muted">아직 마감된 회차가 없어요</span>
                         <Icon name="chevron" size={20} className="chevron" /></div>

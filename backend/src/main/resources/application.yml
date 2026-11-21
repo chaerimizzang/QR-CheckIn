@@ -54,6 +54,10 @@ app:
   cors:
     # 다른 주소에서 API 를 부를 때 허용할 출처(패턴). 화면과 API 가 같은 주소면 필요 없음
     allowed-origins: ${CORS_ORIGINS:http://localhost:*,https://*.trycloudflare.com}
+  attendance:
+    # 결석(인정 결석)이 전체 회차의 이 비율을 넘으면 F 기준 — 경고 알림에 쓴다
+    fail-ratio: 0.25
+    warning-check-ms: 120000
   push:
     # 수업 몇 분 전에 알릴지, 몇 ms 마다 확인할지
     lead-minutes: 10

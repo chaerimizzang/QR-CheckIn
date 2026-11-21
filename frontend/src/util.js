@@ -62,6 +62,13 @@ function locationError(code) {
   return err
 }
 
+/** 결석 경고(F 기준) — 서버 AbsenceRule 과 같은 단계 */
+export const WARNING = {
+  WARNING: { label: '결석 주의', text: '2번 더 결석하면 F 기준을 넘어요', cls: 'warn-warning' },
+  DANGER: { label: '결석 위험', text: '1번만 더 결석해도 F 기준을 넘어요', cls: 'warn-danger' },
+  FAIL: { label: 'F 기준 초과', text: '결석이 수업의 1/4을 넘었어요', cls: 'warn-fail' },
+}
+
 export const STATUS_LABEL = { PRESENT: '출석', LATE: '지각', ABSENT: '결석', EXCUSED: '공결' }
 export const SESSION_LABEL = { SCHEDULED: '예정', OPEN: '출석 중', CLOSED: '마감' }
 

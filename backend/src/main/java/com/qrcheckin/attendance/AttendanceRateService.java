@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +26,16 @@ public class AttendanceRateService {
     private final EnrollmentRepository enrollmentRepository;
     private final ClassSessionRepository sessionRepository;
     private final AttendanceRepository attendanceRepository;
+    private final double failRatio;
 
     public AttendanceRateService(
             CourseService courseService,
             EnrollmentRepository enrollmentRepository,
             ClassSessionRepository sessionRepository,
-            AttendanceRepository attendanceRepository) {
+            AttendanceRepository attendanceRepository,
+            @Value("${app.attendance.fail-ratio:0.25}") double failRatio) {
+
+        this.failRatio = failRatio;
 
         this.courseService = courseService;
         this.enrollmentRepository = enrollmentRepository;
@@ -44,9 +49,10 @@ public class AttendanceRateService {
         // 해당 교육의 관리자만 조회 가능
         courseService.getOwnedCourse(courseId, admin);
 
-        // 마감된 회차만 출석률 계산에 포함
-        List<ClassSession> closedSessions = sessionRepository
-                .findByCourseIdOrderBySessionNoAsc(courseId)
+        // 마감된 회차만 출석률 계산에 포함(전체 회차 수는 F 기준 계산용)
+        List<ClassSession> allSessions = sessionRepository.findByCourseIdOrderBySessionNoAsc(courseId);
+        int planned = allSessions.size();
+        List<ClassSession> closedSessions = allSessions
                 .stream()
                 .filter(s -> s.getStatus() == SessionStatus.CLOSED)
                 .toList();
@@ -58,20 +64,33 @@ public class AttendanceRateService {
                 enrollmentRepository.findByCourseId(courseId);
 
         List<StudentRate> students = enrollments.stream()
-                .map(enrollment -> rateOf(enrollment.getUser(), courseId, closedSessions))
+                .map(enrollment -> rateOf(enrollment.getUser(), courseId, closedSessions, planned))
                 .toList();
 
         return new AttendanceRateResponse(
                 courseId,
                 totalSessions,
+                planned,
+                AbsenceRule.of(planned, 0, failRatio).allowedAbsences(),
                 students
         );
+    }
+
+    /** 결석 경고 알림용: 교육의 모든 수강생 출석률(권한 검사 없음 — 서버 내부에서만 호출) */
+    @Transactional(readOnly = true)
+    public List<StudentRate> ratesOfCourse(Long courseId) {
+        List<ClassSession> all = sessionRepository.findByCourseIdOrderBySessionNoAsc(courseId);
+        List<ClassSession> closed = all.stream().filter(s -> s.getStatus() == SessionStatus.CLOSED).toList();
+        return enrollmentRepository.findByCourseId(courseId).stream()
+                .map(e -> rateOf(e.getUser(), courseId, closed, all.size()))
+                .toList();
     }
 
     /** 학생 프로필용: 수강생 본인의 이 교육 출석률(교수 권한 검사 없음 — 호출하는 쪽에서 수강 여부 확인) */
     @Transactional(readOnly = true)
     public StudentRate rateOfStudent(Long courseId, User student) {
-        return rateOf(student, courseId, closedSessions(courseId));
+        return rateOf(student, courseId, closedSessions(courseId),
+                sessionRepository.findByCourseIdOrderBySessionNoAsc(courseId).size());
     }
 
     /** 마감된 회차만 출석률 계산에 포함 */
@@ -84,7 +103,7 @@ public class AttendanceRateService {
     }
 
     /** 학생 한 명의 출석률 — 지각 3회 = 결석 1회, 마감 회차에 기록이 없으면 결석 */
-    private StudentRate rateOf(User user, Long courseId, List<ClassSession> closedSessions) {
+    private StudentRate rateOf(User user, Long courseId, List<ClassSession> closedSessions, int plannedSessions) {
         int totalSessions = closedSessions.size();
 
         // 학생의 출결 기록을 회차별로 조회
@@ -125,6 +144,9 @@ public class AttendanceRateService {
         // 지각 3회 = 결석 1회
         long convertedAbsences = absent + (late / 3);
 
+        // F 기준(결석이 전체 수업의 1/4 초과) 경고
+        AbsenceRule.Status warning = AbsenceRule.of(plannedSessions, convertedAbsences, failRatio);
+
         // 출석률 계산 — 공결(출석 인정) 회차는 분모에서 뺀다
         long counted = totalSessions - excused;
         double attendanceRate = totalSessions == 0
@@ -145,7 +167,9 @@ public class AttendanceRateService {
                 absent,
                 excused,
                 convertedAbsences,
-                attendanceRate
+                attendanceRate,
+                warning.remaining(),
+                warning.level()
         );
     }
 }

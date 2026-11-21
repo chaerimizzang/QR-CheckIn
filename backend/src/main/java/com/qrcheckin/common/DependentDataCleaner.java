@@ -22,6 +22,7 @@ public class DependentDataCleaner {
 
     /** 교육 전체 */
     public void forCourse(Long courseId) {
+        run("delete from AbsenceWarningState w where w.courseId = :course", "course", courseId, null, null);
         run("delete from RequestEvidence e where e.requestId in (select r.id from AttendanceRequest r"
                 + " where r.session.id in (" + SESSIONS_OF_COURSE + "))", "course", courseId, null, null);
         run("delete from AttendanceRequest r where r.session.id in (" + SESSIONS_OF_COURSE + ")",
@@ -42,6 +43,8 @@ public class DependentDataCleaner {
 
     /** 교육에서 수강생 한 명을 뺄 때 */
     public void forStudentInCourse(Long courseId, Long userId) {
+        run("delete from AbsenceWarningState w where w.courseId = :course and w.userId = :user",
+                "course", courseId, "user", userId);
         run("delete from RequestEvidence e where e.requestId in (select r.id from AttendanceRequest r"
                 + " where r.student.id = :user and r.session.id in (" + SESSIONS_OF_COURSE + "))",
                 "course", courseId, "user", userId);

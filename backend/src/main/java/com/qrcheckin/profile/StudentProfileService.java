@@ -91,6 +91,8 @@ public class StudentProfileService {
                 r.absentCount(),
                 r.excusedCount(),
                 r.convertedAbsences(),
-                total == 0 ? null : r.attendanceRate());
+                total == 0 ? null : r.attendanceRate(),
+                r.remainingAbsences(),
+                r.warningLevel());
     }
 }

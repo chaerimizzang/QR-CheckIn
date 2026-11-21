@@ -318,3 +318,11 @@ select.input:focus, textarea.input:focus { outline: 2px solid var(--primary); bo
 .menu-count { margin-left: auto; background: var(--bad); color: #fff; border-radius: 999px; font-size: 0.75rem; font-weight: 700; padding: 1px 8px; }
 .file-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 400; }
 .req-card > .link-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; }
+
+/* 결석 경고(F 기준) */
+.warn-chip { border-radius: 8px; padding: 8px 10px; font-size: 0.85rem; margin: 8px 0 4px; }
+.warn-banner { margin: 0 0 12px; }
+.warn-tag { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.warn-warning { background: #fff4e0; color: #b26a00; }
+.warn-danger { background: var(--bad-bg); color: var(--bad); }
+.warn-fail { background: var(--bad); color: #fff; }
