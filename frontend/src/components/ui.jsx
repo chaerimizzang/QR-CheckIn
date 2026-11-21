@@ -14,8 +14,9 @@ const COMMON = [
 ]
 const MENU = {
   ADMIN: [{ to: '/admin', label: '홈', icon: 'home', match: (p) => p === '/admin' }, ...COMMON],
-  STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' },
-    { to: '/attendance', label: '출석 현황', icon: 'chart-column', match: (p) => p === '/attendance' }, ...COMMON],
+  // 학생: 홈 · 프로필 · 시간표 · 출결 현황 · 출석 인정
+  STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' }, ...COMMON.slice(0, 2),
+    { to: '/attendance', label: '출결 현황', icon: 'chart-column', match: (p) => p === '/attendance' }, ...COMMON.slice(2)],
 }
 
 function SideMenu({ open, onClose }) {

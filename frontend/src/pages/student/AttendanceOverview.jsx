@@ -6,7 +6,7 @@ import SemesterPicker, { useSemester } from '../../components/SemesterPicker'
 import { WARNING, newestSemesterFirst } from '../../util'
 import Icon from '../../components/Icon'
 
-/** 출석 현황: 수강 중인 수업별 출석·지각·결석과 출석률. 수업을 누르면 날짜별 출결(S-04)로 */
+/** 출결 현황: 수강 중인 수업별 출석·지각·결석과 출석률. 수업을 누르면 날짜별 출결(S-04)로 */
 export default function AttendanceOverview() {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
@@ -16,7 +16,7 @@ export default function AttendanceOverview() {
   const shown = data ? sem.filter([...data.courses].sort((a, b) => newestSemesterFirst(a.semesterKey, b.semesterKey))) : []
 
   return (
-    <Layout back="/student" title="출석 현황">
+    <Layout back="/student" title="출결 현황">
       <ErrorBox error={error} />
       <SemesterPicker sem={sem} />
       {!data ? (!error && <Loading />) : (
