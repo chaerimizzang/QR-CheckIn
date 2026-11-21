@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { session } from '../api'
-import { fmtDateTime } from '../util'
+import { STATUS_LABEL, fmtDateTime } from '../util'
 import Icon from './Icon'
-import { StatusBadge } from './ui'
 
-export const TYPE_LABEL = { EXCUSE: '공결', CORRECTION: '출결 정정' }
+export const TYPE_LABEL = { EXCUSE: '공결', CORRECTION: '출석 정정' }
 export const REQUEST_STATUS = {
   PENDING: { label: '대기', cls: 'req-pending' },
   APPROVED: { label: '승인', cls: 'req-approved' },
@@ -12,8 +11,15 @@ export const REQUEST_STATUS = {
   CANCELED: { label: '취소', cls: 'req-canceled' },
 }
 
+/** "11/20 (금)" — 회차 번호 대신 수업 날짜로 보여 준다 */
+export function fmtDay(s) {
+  if (!s) return '-'
+  const d = new Date(s)
+  return `${d.getMonth() + 1}/${d.getDate()} (${'일월화수목금토'[d.getDay()]})`
+}
+
 /** 증빙 파일은 로그인 토큰이 필요해서 받아서 새 창으로 연다 */
-async function openEvidence(id, setError) {
+async function openEvidence(id, onError) {
   const win = window.open('', '_blank')
   try {
     const res = await fetch(`/api/v1/requests/${id}/evidence`, { headers: { Authorization: `Bearer ${session.token()}` } })
@@ -24,44 +30,55 @@ async function openEvidence(id, setError) {
     setTimeout(() => URL.revokeObjectURL(url), 60_000)
   } catch (e) {
     win?.close()
-    setError?.(e)
+    onError?.(e)
   }
 }
 
-/** 신청 한 건(학생·교수 공통). children 자리에 버튼(승인·반려·취소)을 넣는다 */
-export default function RequestCard({ r, showStudent, children, onError }) {
-  const [opening, setOpening] = useState(false)
+/**
+ * 신청 한 줄. 평소에는 날짜·수업·종류·상태만 보이고, 누르면 사유·증빙·처리 결과와 버튼(children)이 펼쳐진다.
+ * showStudent: 교수 화면(누가 신청했는지)
+ */
+export default function RequestCard({ r, showStudent, open, onToggle, children, onError }) {
   const st = REQUEST_STATUS[r.status]
+  const before = r.statusAtRequest ? STATUS_LABEL[r.statusAtRequest] : '미정'
   return (
-    <div className="card req-card">
-      <div className="req-head">
+    <div className={`card req-item${open ? ' open' : ''}`}>
+      <button type="button" className="req-summary" onClick={onToggle} aria-expanded={open}>
         <span className={`req-status ${st.cls}`}>{st.label}</span>
-        <span className="req-type">{TYPE_LABEL[r.type]}</span>
-        <span className="muted small req-when">{fmtDateTime(r.createdAt)} 신청</span>
-      </div>
-      {showStudent && <div className="item-title">{r.studentName} <span className="muted small">{r.studentNo}</span></div>}
-      <div className={showStudent ? 'small' : 'item-title'}>
-        {r.courseTitle} · {r.sessionNo}회차 <span className="muted small">{fmtDateTime(r.scheduledAt)}</span>
-      </div>
-      <div className="req-change small">
-        <StatusBadge status={r.statusAtRequest} /> <span className="muted">→</span> <StatusBadge status={r.requestedStatus} />
-        {r.status === 'APPROVED' && <span className="muted"> 로 바뀌었어요</span>}
-      </div>
-      <p className="req-reason">{r.reason}</p>
-      {r.hasEvidence && (
-        <button type="button" className="link-btn small" disabled={opening}
-          onClick={async () => { setOpening(true); await openEvidence(r.id, onError); setOpening(false) }}>
-          <Icon name="paperclip-primary" size={14} /> 증빙 파일 보기
-        </button>
-      )}
-      {r.reviewedAt && r.status !== 'CANCELED' && (
-        <div className="req-review small">
-          <b>{r.reviewerName ?? '교수'}</b> · {fmtDateTime(r.reviewedAt)}
-          {r.reviewComment && <div>{r.reviewComment}</div>}
+        <span className="req-main">
+          <span className="req-line1">
+            {showStudent ? <b>{r.studentName}</b> : <b>{fmtDay(r.scheduledAt)}</b>}
+            <span className="req-type">{TYPE_LABEL[r.type]}</span>
+          </span>
+          <span className="req-line2 muted small">
+            {showStudent ? `${fmtDay(r.scheduledAt)} · ${r.courseTitle}` : r.courseTitle}
+          </span>
+        </span>
+        <Icon name="chevron" size={18} className={`chevron req-chevron${open ? ' up' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="req-detail">
+          <dl className="req-dl">
+            {showStudent && <><dt>학번</dt><dd>{r.studentNo || '-'}</dd></>}
+            <dt>수업</dt><dd>{r.courseTitle} · {fmtDateTime(r.scheduledAt)}</dd>
+            <dt>요청</dt><dd>{before} → <b>{STATUS_LABEL[r.requestedStatus]}</b></dd>
+            <dt>사유</dt><dd className="req-reason">{r.reason}</dd>
+            {r.hasEvidence && (
+              <><dt>증빙</dt><dd>
+                <button type="button" className="link-btn small req-file" onClick={() => openEvidence(r.id, onError)}>
+                  <Icon name="paperclip-primary" size={14} /> 파일 보기
+                </button>
+              </dd></>
+            )}
+            <dt>신청</dt><dd>{fmtDateTime(r.createdAt)}</dd>
+            {r.reviewedAt && r.status !== 'CANCELED' && (
+              <><dt>{st.label}</dt><dd>{r.reviewerName ?? '교수'} · {fmtDateTime(r.reviewedAt)}{r.reviewComment && <div className="req-comment">{r.reviewComment}</div>}</dd></>
+            )}
+          </dl>
+          {children}
         </div>
       )}
-      {children}
     </div>
   )
 }
-

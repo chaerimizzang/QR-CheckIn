@@ -295,29 +295,16 @@ tr:last-child td { border-bottom: none; }
 select.input, textarea.input { font: inherit; font-weight: 400; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; width: 100%; min-width: 0; }
 textarea.input { resize: vertical; min-height: 88px; line-height: 1.5; }
 select.input:focus, textarea.input:focus { outline: 2px solid var(--primary); border-color: transparent; }
-.req-card { display: flex; flex-direction: column; gap: 6px; }
-.req-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.req-when { margin-left: auto; }
 .req-status { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
 .req-pending { background: #fff4e0; color: #b26a00; }
 .req-approved { background: var(--ok-bg); color: var(--ok); }
 .req-rejected { background: var(--bad-bg); color: var(--bad); }
 .req-canceled { background: #eef0f4; color: var(--muted); }
 .req-type { font-size: 0.85rem; font-weight: 700; }
-.req-change { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .req-reason { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
-.req-review { background: #f5f7fb; border-radius: 8px; padding: 8px 10px; }
 .req-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
-.req-actions input { flex: 1; min-width: 160px; padding: 8px 10px; }
-.choice-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.choice { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 12px; font: inherit; cursor: pointer; text-align: left; flex: 1; min-width: 130px; }
-.choice.on { border-color: var(--primary); background: #e8f0fe; }
-.choice:disabled { opacity: 0.45; cursor: not-allowed; }
-.choice b { display: block; font-size: 0.95rem; }
-.choice span { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
 .menu-count { margin-left: auto; background: var(--bad); color: #fff; border-radius: 999px; font-size: 0.75rem; font-weight: 700; padding: 1px 8px; }
 .file-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 400; }
-.req-card > .link-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; }
 
 /* 결석 경고(F 기준) */
 .warn-chip { border-radius: 8px; padding: 8px 10px; font-size: 0.85rem; margin: 8px 0 4px; }
@@ -334,3 +321,33 @@ select.input:focus, textarea.input:focus { outline: 2px solid var(--primary); bo
 .final-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #eef1f6; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
 .danger-zone { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .final-banner .link-btn { white-space: nowrap; flex-shrink: 0; }
+
+/* 출석 인정 — 간단한 목록 + 펼쳐 보기 */
+.req-item { padding: 0; overflow: hidden; }
+.req-summary { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.req-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.req-line1 { display: flex; align-items: center; gap: 8px; }
+.req-line2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.req-type { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+.req-chevron { transition: transform .15s; flex-shrink: 0; }
+.req-chevron.up { transform: rotate(90deg); }
+.req-detail { border-top: 1px solid var(--line); padding: 12px 16px 14px; }
+.req-dl { display: grid; grid-template-columns: 44px 1fr; gap: 6px 10px; margin: 0; font-size: 0.9rem; }
+.req-dl dt { color: var(--muted); }
+.req-dl dd { margin: 0; min-width: 0; }
+.req-comment { margin-top: 4px; background: #f5f7fb; border-radius: 8px; padding: 6px 8px; }
+.req-file { display: inline-flex; align-items: center; gap: 4px; padding: 0; }
+.req-review-form { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.req-review-form input { padding: 9px 10px; }
+.req-actions { display: flex; gap: 8px; margin-top: 10px; }
+.req-actions .btn { flex: 1; }
+.req-review-form .req-actions { margin-top: 0; }
+.req-filter { margin-bottom: 12px; }
+.req-form { display: flex; flex-direction: column; gap: 10px; }
+.req-form label { margin-bottom: 0; }
+.req-types { margin-bottom: 0; }
+.req-types button { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.req-types button small { font-size: 0.72rem; font-weight: 400; color: var(--muted); }
+.req-types button:disabled { opacity: 0.4; cursor: not-allowed; }
+.req-form-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.req-form-foot .link-btn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1,24 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { get, post, upload } from '../../api'
-import RequestCard from '../../components/RequestCard'
+import Icon from '../../components/Icon'
+import RequestCard, { fmtDay } from '../../components/RequestCard'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
-import { STATUS_LABEL, fmtDateTime } from '../../util'
+import { STATUS_LABEL, fmtTime } from '../../util'
 
 const MAX_MB = 5
 
-/** 회차마다 어떤 신청이 되는지(서버 규칙과 같게) */
+/** 이 날짜에 할 수 있는 신청(서버 규칙과 같게). 정정은 항상 '출석으로' */
 function allowed(o) {
   if (!o || o.pending) return { excuse: false, correction: false }
   const st = o.myStatus
-  const excuse = st !== 'PRESENT' && st !== 'EXCUSED'
-  const correction = o.sessionStatus !== 'SCHEDULED' && (st === 'ABSENT' || st === 'LATE' || !st)
-  return { excuse, correction, lateOk: st !== 'LATE' }
+  return {
+    excuse: st !== 'PRESENT' && st !== 'EXCUSED',
+    correction: o.sessionStatus !== 'SCHEDULED' && st !== 'PRESENT' && st !== 'EXCUSED',
+  }
 }
 
-function optionLabel(o) {
+function dateLabel(o) {
   const st = o.myStatus ? STATUS_LABEL[o.myStatus] : o.sessionStatus === 'SCHEDULED' ? '예정' : '미정'
-  return `${o.sessionNo}회차 · ${fmtDateTime(o.scheduledAt)} · ${st}${o.pending ? ' (신청 처리 중)' : ''}`
+  return `${fmtDay(o.scheduledAt)} ${fmtTime(o.scheduledAt)} · ${st}`
 }
 
 /** 학생: 출석 인정 신청 + 내 신청 목록 */
@@ -26,14 +28,14 @@ export default function StudentRequests() {
   const [params, setParams] = useSearchParams()
   const [list, setList] = useState(null)
   const [courses, setCourses] = useState([])
-  const [open, setOpen] = useState(params.get('new') === '1')
+  const [formOpen, setFormOpen] = useState(params.get('new') === '1')
   const [courseId, setCourseId] = useState(params.get('course') ?? '')
   const [options, setOptions] = useState(null)
   const [sessionId, setSessionId] = useState(params.get('session') ?? '')
   const [type, setType] = useState('')
-  const [requested, setRequested] = useState('PRESENT')
   const [reason, setReason] = useState('')
   const [file, setFile] = useState(null)
+  const [openId, setOpenId] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [done, setDone] = useState('')
@@ -42,35 +44,37 @@ export default function StudentRequests() {
   const load = () => get('/me/requests').then(setList).catch(setError)
   useEffect(() => {
     load()
-    get('/courses').then(setCourses).catch(setError)
+    get('/courses').then((cs) => setCourses(cs.filter((c) => !c.finalizedAt))).catch(setError)
   }, [])
 
   useEffect(() => {
     setOptions(null)
-    if (!courseId) return
-    get(`/courses/${courseId}/request-options`).then(setOptions).catch(setError)
+    if (courseId) get(`/courses/${courseId}/request-options`).then(setOptions).catch(setError)
   }, [courseId])
 
-  const option = useMemo(() => options?.find((o) => String(o.sessionId) === String(sessionId)), [options, sessionId])
+  // 신청할 수 있는 날짜만, 가까운 날짜부터
+  const dates = useMemo(() => (options ?? [])
+    .filter((o) => { const a = allowed(o); return a.excuse || a.correction })
+    .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt)), [options])
+  const option = dates.find((o) => String(o.sessionId) === String(sessionId))
   const can = allowed(option)
 
-  // 회차를 바꾸면 고를 수 있는 종류로 맞춘다
+  // 날짜를 고르면 할 수 있는 종류가 하나뿐일 때 자동으로 고른다
   useEffect(() => {
     if (!option) { setType(''); return }
-    if (type === 'EXCUSE' && !can.excuse) setType('')
-    if (type === 'CORRECTION' && !can.correction) setType('')
-    if (!type) setType(can.excuse && !can.correction ? 'EXCUSE' : can.correction && !can.excuse ? 'CORRECTION' : '')
-    if (!can.lateOk && requested === 'LATE') setRequested('PRESENT')
+    if ((type === 'EXCUSE' && !can.excuse) || (type === 'CORRECTION' && !can.correction) || !type) {
+      setType(can.correction ? (option.myStatus === 'ABSENT' && can.excuse ? '' : 'CORRECTION') : 'EXCUSE')
+    }
   }, [option]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function reset() {
-    setSessionId(''); setType(''); setReason(''); setFile(null); setRequested('PRESENT')
+    setSessionId(''); setType(''); setReason(''); setFile(null)
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  function toggle() {
-    setOpen(!open); setError(null); setDone('')
-    if (open) { reset(); setParams({}, { replace: true }) }
+  function toggleForm() {
+    setFormOpen(!formOpen); setError(null); setDone('')
+    if (formOpen) { reset(); setParams({}, { replace: true }) }
   }
 
   function pickFile(e) {
@@ -89,12 +93,11 @@ export default function StudentRequests() {
     setBusy(true); setError(null); setDone('')
     try {
       await upload(`/sessions/${sessionId}/requests`, file, 'file', {
-        type, reason, requestedStatus: type === 'CORRECTION' ? requested : undefined,
+        type, reason, requestedStatus: type === 'CORRECTION' ? 'PRESENT' : undefined,
       })
       setDone('신청했어요. 교수님이 확인하면 알림으로 알려 드려요')
-      reset(); setOpen(false); setParams({}, { replace: true })
+      reset(); setFormOpen(false); setParams({}, { replace: true })
       load()
-      if (courseId) get(`/courses/${courseId}/request-options`).then(setOptions).catch(() => {})
     } catch (err) { setError(err) } finally { setBusy(false) }
   }
 
@@ -103,97 +106,66 @@ export default function StudentRequests() {
     try { await post(`/requests/${id}/cancel`); load() } catch (err) { setError(err) }
   }
 
-  const pending = list?.filter((r) => r.status === 'PENDING').length ?? 0
-
   return (
-    <Layout title="출석 인정" actions={<button className="btn btn-primary" onClick={toggle}>{open ? '닫기' : '+ 신청하기'}</button>}>
+    <Layout title="출석 인정" actions={<button className="btn btn-primary" onClick={toggleForm}>{formOpen ? '닫기' : '+ 신청'}</button>}>
       {done && <div className="alert alert-ok">{done}</div>}
       <ErrorBox error={error} />
 
-      {open && (
-        <form className="card" onSubmit={submit}>
-          <label>수업
-            <select className="input" value={courseId} required
-              onChange={(e) => { setCourseId(e.target.value); setSessionId('') }}>
-              <option value="">수업을 골라 주세요</option>
-              {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-            </select>
-          </label>
-
-          {courseId && (
-            <label>회차
-              {!options ? <Loading /> : (
-                <select className="input" value={sessionId} required onChange={(e) => setSessionId(e.target.value)}>
-                  <option value="">회차를 골라 주세요</option>
-                  {options.map((o) => {
-                    const a = allowed(o)
-                    return <option key={o.sessionId} value={o.sessionId} disabled={!a.excuse && !a.correction}>{optionLabel(o)}</option>
-                  })}
-                </select>
-              )}
+      {formOpen && (
+        <form className="card req-form" onSubmit={submit}>
+          <div className="grid2">
+            <label>수업
+              <select className="input" value={courseId} required onChange={(e) => { setCourseId(e.target.value); setSessionId('') }}>
+                <option value="">선택</option>
+                {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
             </label>
-          )}
+            <label>날짜
+              <select className="input" value={sessionId} required disabled={!courseId || !options}
+                onChange={(e) => setSessionId(e.target.value)}>
+                <option value="">{courseId && options && dates.length === 0 ? '신청할 날짜가 없어요' : '선택'}</option>
+                {dates.map((o) => <option key={o.sessionId} value={o.sessionId}>{dateLabel(o)}</option>)}
+              </select>
+            </label>
+          </div>
 
           {option && (
-            <div className="field">
-              신청 종류
-              <div className="choice-row">
-                <button type="button" className={`choice${type === 'EXCUSE' ? ' on' : ''}`} disabled={!can.excuse}
-                  onClick={() => setType('EXCUSE')}>
-                  <b>공결</b><span>병결·예비군·경조사 등 사유가 있는 결석</span>
-                </button>
-                <button type="button" className={`choice${type === 'CORRECTION' ? ' on' : ''}`} disabled={!can.correction}
-                  onClick={() => setType('CORRECTION')}>
-                  <b>출결 정정</b><span>출석했는데 결석·지각으로 처리됨</span>
-                </button>
-              </div>
-              {option.sessionStatus === 'SCHEDULED' && <span className="muted small">아직 열리지 않은 회차는 공결만 미리 신청할 수 있어요</span>}
-            </div>
-          )}
-
-          {type === 'CORRECTION' && (
-            <div className="field">
-              바꿔 달라는 상태
-              <div className="choice-row">
-                <button type="button" className={`choice${requested === 'PRESENT' ? ' on' : ''}`} onClick={() => setRequested('PRESENT')}><b>출석</b></button>
-                <button type="button" className={`choice${requested === 'LATE' ? ' on' : ''}`} disabled={!can.lateOk} onClick={() => setRequested('LATE')}><b>지각</b></button>
-              </div>
+            <div className="segmented req-types">
+              <button type="button" className={type === 'EXCUSE' ? 'on' : ''} disabled={!can.excuse} onClick={() => setType('EXCUSE')}>
+                공결 <small>사유 있는 결석</small>
+              </button>
+              <button type="button" className={type === 'CORRECTION' ? 'on' : ''} disabled={!can.correction} onClick={() => setType('CORRECTION')}>
+                출석 정정 <small>출석했는데 잘못 처리됨</small>
+              </button>
             </div>
           )}
 
           {type && (
             <>
-              <label>사유
-                <textarea className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} required
-                  placeholder={type === 'EXCUSE' ? '예: 11/20 독감으로 병원 진료' : '예: 13:02에 QR을 찍었는데 결석으로 나왔어요'} />
-                <span className="muted small">{reason.length}/500</span>
-              </label>
-              <div className="field">
-                증빙 파일 <span className="muted small">선택 · 사진 또는 PDF, {MAX_MB}MB 이하</span>
-                <div className="file-pick">
-                  <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={pickFile} />
-                </div>
+              <textarea className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} required
+                aria-label="사유"
+                placeholder={type === 'EXCUSE' ? '사유를 적어 주세요 (예: 독감으로 병원 진료)' : '어떻게 된 건지 적어 주세요 (예: 13:02에 QR을 찍었어요)'} />
+              <div className="req-form-foot">
+                <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={pickFile} hidden />
+                <button type="button" className="link-btn small req-file" onClick={() => fileRef.current?.click()}>
+                  {file ? <><Icon name="paperclip-primary" size={14} /> {file.name}</> : '+ 증빙 사진 첨부(선택)'}
+                </button>
+                <button className="btn btn-primary" disabled={busy || !reason.trim()}>{busy ? '보내는 중…' : '신청하기'}</button>
               </div>
-              <button className="btn btn-primary btn-block" disabled={busy || !reason.trim()}>
-                {busy ? '보내는 중…' : `${type === 'EXCUSE' ? '공결' : '출결 정정'} 신청하기`}
-              </button>
             </>
           )}
         </form>
       )}
 
-      <div className="section-row">
-        <h2 className="section-title">내 신청 {pending > 0 && <span className="muted small">처리 중 {pending}건</span>}</h2>
-      </div>
       {!list ? <Loading /> : list.length === 0 ? (
-        <Empty>아직 신청한 내역이 없어요. 결석·지각이 잘못됐거나 사유가 있으면 [+ 신청하기]를 눌러 주세요.</Empty>
+        <Empty>신청한 내역이 없어요</Empty>
       ) : (
         <div className="list">
           {list.map((r) => (
-            <RequestCard key={r.id} r={r} onError={setError}>
+            <RequestCard key={r.id} r={r} open={openId === r.id} onToggle={() => setOpenId(openId === r.id ? null : r.id)} onError={setError}>
               {r.status === 'PENDING' && (
                 <div className="req-actions">
-                  <button type="button" className="link-btn small danger" onClick={() => cancel(r.id)}>신청 취소</button>
+                  <button type="button" className="btn btn-sm" onClick={() => cancel(r.id)}>신청 취소</button>
                 </div>
               )}
             </RequestCard>

@@ -67,8 +67,8 @@ export default function CourseDetail() {
         setError({ message: `처리하지 않은 출석 인정 신청이 ${c.pendingRequests}건 있어요. 메뉴 [출석 인정]에서 먼저 승인·반려해 주세요` })
         return
       }
-      const extra = c.unopenedSessions > 0 ? `\n\n한 번도 열지 않은 예정 회차 ${c.unopenedSessions}개는 삭제돼요.` : ''
-      if (!window.confirm(`'${course.title}' 출결을 확정할까요?\n확정하면 출결·회차·수강생을 바꿀 수 없어요(조회·내려받기는 돼요).${extra}`)) return
+      const extra = c.unopenedSessions > 0 ? `\n열지 않은 예정 회차 ${c.unopenedSessions}개는 삭제돼요.` : ''
+      if (!window.confirm(`'${course.title}' 출결을 확정할까요?${extra}`)) return
       await post(`/courses/${courseId}/finalize`)
       setNotice('출결을 확정했어요')
       load()
@@ -76,7 +76,7 @@ export default function CourseDetail() {
   }
 
   async function reopenCourse() {
-    if (!window.confirm('출결 확정을 취소할까요? 다시 출결을 바꿀 수 있게 돼요.')) return
+    if (!window.confirm('출결 확정을 취소할까요?')) return
     try { await post(`/courses/${courseId}/reopen`); setNotice('출결 확정을 취소했어요'); load() } catch (err) { setError(err) }
   }
 
@@ -96,7 +96,7 @@ export default function CourseDetail() {
       {notice && <div className="alert alert-ok">{notice}</div>}
       {course.finalizedAt && (
         <div className="final-banner">
-          <div><b>출결 확정됨</b> <span className="small">{fmtDateTime(course.finalizedAt)} · 출결·회차·수강생을 바꿀 수 없어요</span></div>
+          <div><b>출결 확정됨</b> <span className="small muted">{fmtDateTime(course.finalizedAt)}</span></div>
           <button type="button" className="link-btn small" onClick={reopenCourse}>확정 취소</button>
         </div>
       )}
