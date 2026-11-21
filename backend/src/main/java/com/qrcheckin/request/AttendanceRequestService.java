@@ -90,6 +90,9 @@ public class AttendanceRequestService {
         ClassSession session = sessions.findById(sessionId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "회차를 찾을 수 없어요"));
         requireEnrolled(session.getCourse().getId(), student.id());
+        if (session.getCourse().isFinalized()) {
+            throw new ApiException(ErrorCode.COURSE_FINALIZED, "출결이 확정된 수업이라 신청할 수 없어요");
+        }
         if (type == null) {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, "신청 종류(공결·정정)를 골라 주세요");
         }
@@ -195,6 +198,7 @@ public class AttendanceRequestService {
     public RequestRow reject(Long requestId, AuthUser admin, String comment) {
         AttendanceRequest r = ownedByProfessor(requestId, admin);
         requirePending(r);
+        r.getSession().getCourse().requireEditable();
         String why = blankToNull(comment);
         if (why == null) {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, "반려 사유를 적어 주세요");

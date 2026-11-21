@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { get } from '../api'
 import { useAuth } from '../auth'
 import { Empty, ErrorBox, Layout, Loading } from '../components/ui'
+import SemesterPicker, { useSemester } from '../components/SemesterPicker'
 import { DAY_LABEL, WEEKDAYS as DAYS, fmtSlot, fromMinutes, toMinutes } from '../util'
 
 const HOUR_PX = 52
@@ -12,13 +13,15 @@ export default function Timetable() {
   const { user } = useAuth()
   const [courses, setCourses] = useState(null)
   const [error, setError] = useState(null)
+  const sem = useSemester()
   useEffect(() => { get('/courses').then(setCourses).catch(setError) }, [])
 
   const isAdmin = user?.role === 'ADMIN'
   const linkOf = (c) => (isAdmin ? `/admin/courses/${c.id}` : `/student/courses/${c.id}`)
 
   const { blocks, startHour, endHour, unscheduled } = useMemo(() => {
-    const list = (courses ?? []).flatMap((c) => (c.schedules ?? []).map((s) => {
+    const shown = courses ? sem.filter(courses) : []
+    const list = shown.flatMap((c) => (c.schedules ?? []).map((s) => {
       const start = toMinutes(s.startTime)
       return { course: c, slot: s, start, end: start + s.durationMinutes }
     }))
@@ -28,9 +31,9 @@ export default function Timetable() {
       blocks: list,
       startHour: Math.min(9, Math.floor(min / 60)),
       endHour: Math.max(18, Math.ceil(max / 60)),
-      unscheduled: (courses ?? []).filter((c) => !(c.schedules ?? []).length),
+      unscheduled: shown.filter((c) => !(c.schedules ?? []).length),
     }
-  }, [courses])
+  }, [courses, sem.value]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i)
   const top = (min) => ((min - startHour * 60) / 60) * HOUR_PX
@@ -39,6 +42,7 @@ export default function Timetable() {
   return (
     <Layout title="시간표">
       <ErrorBox error={error} />
+      <SemesterPicker sem={sem} />
       {!courses ? (!error && <Loading />) : courses.length === 0 ? (
         <Empty>{isAdmin ? '아직 만든 교육이 없어요.' : '아직 수강 중인 교육이 없어요.'}</Empty>
       ) : (

@@ -138,6 +138,9 @@ DB_URL='jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul' DB_PASS
 | GET | `/requests` · `/requests/pending-count` | 내 교육들의 신청 목록 · 대기 수 | 관리자 |
 | POST | `/requests/{id}/approve` · `/requests/{id}/reject` | 승인(출결 변경 + 수정 이력) · 반려(`comment` 필수) | 관리자 |
 | GET | `/requests/{id}/evidence` | 증빙 파일(신청한 학생·담당 교수만) | 로그인 |
+| GET | `/semesters` · `/semesters/current` | 학기 선택 목록 · 현재 학기 | 로그인 |
+| GET | `/courses/{id}/finalize-check` | 출결 확정 전 확인(진행 중 회차·대기 신청·지워질 예정 회차) | 관리자 |
+| POST | `/courses/{id}/finalize` · `/courses/{id}/reopen` | 출결 확정 · 확정 취소 | 관리자 |
 | GET | `/push/public-key` | 알림용 서버 공개키 | 로그인 |
 | POST | `/push/subscriptions` | 이 기기 알림 구독 (`endpoint`, `keys.p256dh`, `keys.auth`) | 로그인 |
 | POST | `/push/subscriptions/delete` | 이 기기 알림 끄기 `{"endpoint":"..."}` | 로그인 |
@@ -180,6 +183,12 @@ curl -X POST localhost:8080/api/v1/auth/login -H "Content-Type: application/json
 
 - **출석 인정**(메뉴): 학생이 회차를 골라 공결(병결·예비군 등) 또는 출결 정정(출석·지각)을 사유와 증빙 파일로 신청하고, 교수가 승인·반려합니다. 승인하면 출결이 바뀌고 수정 이력이 남습니다. 공결 회차는 출석률 계산에서 빠집니다.
 - **결석 경고**: 인정 결석(결석 + 지각 3회당 1회)이 전체 회차의 1/4을 넘으면 F 기준입니다(`app.attendance.fail-ratio`). 2분마다 계산해서 단계가 올라가면(주의 → 위험 → F 기준 초과) 학생에게, 위험·F 기준 초과는 교수에게도 휴대폰 알림을 보냅니다. 프로필·내 출결·교육 상세(수강생 표)에도 표시됩니다.
+
+## 학기 · 출결 확정
+
+- 교육마다 학기(예: 2026년 2학기)가 붙습니다. 만들 때 고르거나, 비우면 시작 월(없으면 오늘) 기준으로 정합니다(3~6월 1학기, 7~8월 여름학기, 9~12월 2학기, 1~2월 전년도 겨울학기). 예전 교육은 서버 시작 때 자동으로 채웁니다.
+- 홈·시간표에서 학기를 골라 보고(기본: 현재 학기), 프로필은 학기별로 묶어 보여 줍니다.
+- 교육 상세의 **[학기 마무리 · 출결 확정]**: 진행 중 회차와 처리 안 한 출석 인정 신청이 없어야 하며, 한 번도 열지 않은 예정 회차는 지웁니다. 확정된 교육은 출결·회차·수강생·신청을 바꿀 수 없고(조회·내려받기는 가능), 교수가 [확정 취소]로 되돌릴 수 있습니다.
 
 ## QR 토큰 설계 요약
 

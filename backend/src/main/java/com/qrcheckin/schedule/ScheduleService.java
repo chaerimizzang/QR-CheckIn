@@ -64,6 +64,7 @@ public class ScheduleService {
     @Transactional
     public List<ScheduleSlot> replace(Long courseId, ScheduleRequest req, AuthUser admin) {
         Course course = courseService.getOwnedCourse(courseId, admin);
+        course.requireEditable(); // 출결이 확정된 교육은 읽기 전용
         List<ScheduleSlot> sorted = req.slots().stream().sorted(ScheduleSlot.ORDER).toList();
         for (ScheduleSlot s : sorted) {
             if (!ScheduleDtos.isWeekday(s.dayOfWeek())) {
@@ -99,6 +100,7 @@ public class ScheduleService {
     @Transactional
     public GenerateResult generate(Long courseId, GenerateRequest req, AuthUser admin) {
         Course course = courseService.getOwnedCourse(courseId, admin);
+        course.requireEditable(); // 출결이 확정된 교육은 읽기 전용
         List<ScheduleSlot> slots = slots(courseId);
         if (slots.isEmpty()) {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, "먼저 주간 시간표를 저장해 주세요");

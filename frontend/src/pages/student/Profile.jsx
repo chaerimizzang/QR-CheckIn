@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { get } from '../../api'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import AccountCard from '../../components/AccountCard'
 import { PushCard } from '../../components/PushCard'
-import { WARNING } from '../../util'
+import { WARNING, newestSemesterFirst } from '../../util'
 import Icon from '../../components/Icon'
 
 /** 학생 프로필: 내 정보 + 수강 중인 수업별 출석률. 수업을 누르면 회차별 출결(S-04)로 */
@@ -36,12 +36,15 @@ export default function StudentProfile() {
             <Empty>아직 수강 중인 수업이 없어요. 강사님께 가입한 이메일을 알려 드리고 등록을 요청해 주세요.</Empty>
           ) : (
             <div className="list">
-              {data.courses.map((c) => {
+              {[...data.courses].sort((a, b) => newestSemesterFirst(a.semesterKey, b.semesterKey)).map((c, i, arr) => {
+                const newGroup = i === 0 || arr[i - 1].semesterLabel !== c.semesterLabel
                 return (
+                  <Fragment key={c.courseId}>
+                  {newGroup && <div className="semester-head">{c.semesterLabel}</div>}
                   <Link key={c.courseId} to={`/student/courses/${c.courseId}?from=profile`} className="card rate-card">
                     <div className="rate-head">
                       <div>
-                        <div className="item-title">{c.title}</div>
+                        <div className="item-title">{c.title}{c.finalized && <span className="badge badge-final">출결 확정</span>}</div>
                         <div className="muted small">{c.ownerName}</div>
                       </div>
                       <div className="rate-value">
@@ -72,6 +75,7 @@ export default function StudentProfile() {
                       </>
                     )}
                   </Link>
+                  </Fragment>
                 )
               })}
             </div>

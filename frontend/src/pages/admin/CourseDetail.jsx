@@ -58,6 +58,28 @@ export default function CourseDetail() {
     } catch (err) { setError(err) }
   }
 
+  async function finalizeCourse() {
+    setError(null); setNotice(null)
+    try {
+      const c = await get(`/courses/${courseId}/finalize-check`)
+      if (c.openSessions > 0) { setError({ message: '출석이 진행 중인 회차가 있어요. 먼저 마감해 주세요' }); return }
+      if (c.pendingRequests > 0) {
+        setError({ message: `처리하지 않은 출석 인정 신청이 ${c.pendingRequests}건 있어요. 메뉴 [출석 인정]에서 먼저 승인·반려해 주세요` })
+        return
+      }
+      const extra = c.unopenedSessions > 0 ? `\n\n한 번도 열지 않은 예정 회차 ${c.unopenedSessions}개는 삭제돼요.` : ''
+      if (!window.confirm(`'${course.title}' 출결을 확정할까요?\n확정하면 출결·회차·수강생을 바꿀 수 없어요(조회·내려받기는 돼요).${extra}`)) return
+      await post(`/courses/${courseId}/finalize`)
+      setNotice('출결을 확정했어요')
+      load()
+    } catch (err) { setError(err) }
+  }
+
+  async function reopenCourse() {
+    if (!window.confirm('출결 확정을 취소할까요? 다시 출결을 바꿀 수 있게 돼요.')) return
+    try { await post(`/courses/${courseId}/reopen`); setNotice('출결 확정을 취소했어요'); load() } catch (err) { setError(err) }
+  }
+
   async function removeCourse() {
     if (!window.confirm(`'${course.title}' 교육을 삭제할까요? 회차와 출결 기록이 모두 지워져요.`)) return
     try {
@@ -72,8 +94,14 @@ export default function CourseDetail() {
     <Layout back="/admin" title={course.title}>
       <ErrorBox error={error} />
       {notice && <div className="alert alert-ok">{notice}</div>}
+      {course.finalizedAt && (
+        <div className="final-banner">
+          <div><b>출결 확정됨</b> <span className="small">{fmtDateTime(course.finalizedAt)} · 출결·회차·수강생을 바꿀 수 없어요</span></div>
+          <button type="button" className="link-btn small" onClick={reopenCourse}>확정 취소</button>
+        </div>
+      )}
       <p className="muted small course-meta">
-        {fmtSchedules(course.schedules) || '시간표 미정'}
+        {course.semesterLabel} · {fmtSchedules(course.schedules) || '시간표 미정'}
         {fmtPeriod(course.startDate, course.endDate) && ` · ${fmtPeriod(course.startDate, course.endDate)}`}
       </p>
 
@@ -85,10 +113,10 @@ export default function CourseDetail() {
 
       {tab === 'sessions' && (
         <>
-          <form className="card row-form" onSubmit={addSession}>
+          {!course.finalizedAt && <form className="card row-form" onSubmit={addSession}>
             <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} required />
             <button className="btn btn-primary">+ 회차 추가</button>
-          </form>
+          </form>}
           {!sessions ? <Loading /> : sessions.length === 0 ? <Empty>회차를 추가해 주세요.</Empty> : (
             <div className="list">
               {sessions.map((s) => (
@@ -110,10 +138,12 @@ export default function CourseDetail() {
 
       {tab === 'students' && (
         <>
+          {!course.finalizedAt && <>
           <form className="card row-form" onSubmit={addStudent}>
             <input type="email" placeholder="수강생이 가입한 이메일" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <button className="btn btn-primary">+ 추가</button>
           </form>
+          </>}
           <StudentCsvTools course={course} onDone={load} onError={setError} />
           {(() => {
             const risky = attendanceRates?.students?.filter((r) => r.warningLevel === 'DANGER' || r.warningLevel === 'FAIL') ?? []
@@ -196,7 +226,10 @@ export default function CourseDetail() {
 
 
       <div className="danger-zone">
-        <button className="link-btn danger" onClick={removeCourse}>교육 삭제</button>
+        {!course.finalizedAt && (
+          <button className="btn btn-sm" onClick={finalizeCourse}>학기 마무리 · 출결 확정</button>
+        )}
+        {!course.finalizedAt && <button className="link-btn danger" onClick={removeCourse}>교육 삭제</button>}
       </div>
     </Layout>
   )

@@ -51,6 +51,7 @@ public class EnrollmentService {
     @Transactional
     public StudentResponse add(Long courseId, String email, AuthUser admin) {
         Course course = courseService.getOwnedCourse(courseId, admin);
+        course.requireEditable(); // 출결이 확정된 교육은 읽기 전용
         User student = userRepository.findByEmail(email.trim().toLowerCase(Locale.ROOT))
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
         if (student.getRole() != Role.STUDENT) {
@@ -70,7 +71,7 @@ public class EnrollmentService {
     /** 수강생 삭제 시 그 학생의 이 교육 출결 기록도 함께 지운다 */
     @Transactional
     public void remove(Long courseId, Long userId, AuthUser admin) {
-        courseService.getOwnedCourse(courseId, admin);
+        courseService.getOwnedCourse(courseId, admin).requireEditable();
         Enrollment enrollment = enrollmentRepository.findByCourseIdAndUserId(courseId, userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "등록된 수강생이 아니에요"));
         cleaner.forStudentInCourse(courseId, userId); // 수정 이력·출석 인정 신청
