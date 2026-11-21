@@ -47,7 +47,7 @@ export default function SessionDetail() {
       const students = r.students.map((st) => (byId.has(st.userId) ? { ...st, ...byId.get(st.userId) } : st))
       const count = (k) => students.filter((st) => st.status === k).length
       return { ...r, students, summary: { enrolled: students.length, present: count('PRESENT'), late: count('LATE'),
-        absent: count('ABSENT'), pending: students.filter((st) => !st.status).length } }
+        absent: count('ABSENT'), excused: count('EXCUSED'), pending: students.filter((st) => !st.status).length } }
     })
   }
 
@@ -327,6 +327,7 @@ export default function SessionDetail() {
             <span> 출석 <b>{roster.summary.present}</b> ({presentRate}%)</span>
             <span> 지각 <b>{roster.summary.late}</b> ({lateRate}%) </span>
             <span> 결석 <b>{roster.summary.absent}</b> ({absentRate}%) </span>
+            {roster.summary.excused > 0 && <span> 공결 <b>{roster.summary.excused}</b> </span>}
             <span> 미정 <b>{roster.summary.pending}</b> </span>
             <span className="muted">/ 전체 {total}명 </span>
           </div>
@@ -353,6 +354,7 @@ export default function SessionDetail() {
                   <option value="PRESENT">출석</option>
                   <option value="LATE">지각</option>
                   <option value="ABSENT">결석</option>
+                  <option value="EXCUSED">공결</option>
                 </select>
                 <button className="btn btn-primary btn-sm" onClick={bulkChange} disabled={selectedIds.length === 0}>
                   선택 학생 출결 변경
@@ -386,10 +388,10 @@ export default function SessionDetail() {
                         {historyOpen === r.userId ? '이력 닫기' : '수정 이력'}
                       </button>
                       <div className="seg-sm">
-                        {['PRESENT', 'LATE', 'ABSENT'].map((st) => (
+                        {['PRESENT', 'LATE', 'ABSENT', 'EXCUSED'].map((st) => (
                           <button key={st} className={r.status === st ? `on ${st.toLowerCase()}` : ''}
                             onClick={() => r.status !== st && change(r.userId, st)}>
-                            {{ PRESENT: '출석', LATE: '지각', ABSENT: '결석' }[st]}
+                            {STATUS_LABEL[st]}
                           </button>
                         ))}
                       </div>

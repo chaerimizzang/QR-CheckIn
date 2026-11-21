@@ -132,6 +132,12 @@ DB_URL='jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul' DB_PASS
 | GET | `/me` | 내 정보 | 로그인 |
 | PUT | `/me/name` | 이름 변경 `{"name":"..."}` | 로그인 |
 | POST | `/me/password` | 비밀번호 변경 (`currentPassword`, `newPassword`, `confirmPassword`) | 로그인 |
+| POST | `/sessions/{id}/requests` | 출석 인정 신청(multipart: `type`=EXCUSE·CORRECTION, `requestedStatus`, `reason`, `file` 선택 5MB) | 수강생 |
+| GET | `/courses/{id}/request-options` | 신청할 수 있는 회차와 내 출결 상태 | 수강생 |
+| GET | `/me/requests` · POST `/requests/{id}/cancel` | 내 신청 목록 · 처리 전 취소 | 수강생 |
+| GET | `/requests` · `/requests/pending-count` | 내 교육들의 신청 목록 · 대기 수 | 관리자 |
+| POST | `/requests/{id}/approve` · `/requests/{id}/reject` | 승인(출결 변경 + 수정 이력) · 반려(`comment` 필수) | 관리자 |
+| GET | `/requests/{id}/evidence` | 증빙 파일(신청한 학생·담당 교수만) | 로그인 |
 | GET | `/push/public-key` | 알림용 서버 공개키 | 로그인 |
 | POST | `/push/subscriptions` | 이 기기 알림 구독 (`endpoint`, `keys.p256dh`, `keys.auth`) | 로그인 |
 | POST | `/push/subscriptions/delete` | 이 기기 알림 끄기 `{"endpoint":"..."}` | 로그인 |

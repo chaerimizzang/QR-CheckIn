@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { get } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge, StatusBadge } from '../../components/ui'
 import { fmtDateTime, fmtTime } from '../../util'
+
+/** 출석 인정을 신청할 수 있는 회차: 결석·지각이거나, 아직 열리지 않은(미리 공결) 회차 */
+const canRequest = (s) => s.status === 'ABSENT' || s.status === 'LATE' || (!s.status && s.sessionStatus !== 'OPEN')
 
 /** S-04 내 출결 */
 export default function MyAttendance() {
@@ -24,6 +27,7 @@ export default function MyAttendance() {
             <span>출석 <b>{count('PRESENT')}</b></span>
             <span>지각 <b>{count('LATE')}</b></span>
             <span>결석 <b>{count('ABSENT')}</b></span>
+            {count('EXCUSED') > 0 && <span>공결 <b>{count('EXCUSED')}</b></span>}
           </div>
           {data.sessions.length === 0 ? <Empty>아직 회차가 없어요.</Empty> : (
             <div className="list">
@@ -36,6 +40,11 @@ export default function MyAttendance() {
                   <div className="right">
                     {s.status ? <StatusBadge status={s.status} /> : <SessionBadge status={s.sessionStatus} />}
                     {s.checkedAt && <div className="muted small">{fmtTime(s.checkedAt)}</div>}
+                    {canRequest(s) && (
+                      <Link className="link-btn small" to={`/requests?new=1&course=${courseId}&session=${s.sessionId}`}>
+                        출석 인정 신청
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}

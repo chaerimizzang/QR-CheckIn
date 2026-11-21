@@ -13,7 +13,8 @@ public record AttendanceStatisticsResponse(
             int sessionNo,
             long presentCount,
             long lateCount,
-            long absentCount
+            long absentCount,
+            long excusedCount
     ) {}
 
     public record StudentAbsenceStatistics(

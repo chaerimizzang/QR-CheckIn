@@ -65,6 +65,12 @@ public class GlobalExceptionHandler {
                 "지원하지 않는 요청 방식이에요(" + e.getMethod() + ")", Map.of()));
     }
 
+    /** 업로드 파일이 너무 큼(spring.servlet.multipart.max-file-size) → 400 */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleTooLarge(Exception e) {
+        return ResponseEntity.status(ErrorCode.FILE_TOO_LARGE.status()).body(ErrorResponse.of(ErrorCode.FILE_TOO_LARGE));
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleDenied(AccessDeniedException e) {
         return ResponseEntity.status(ErrorCode.FORBIDDEN.status()).body(ErrorResponse.of(ErrorCode.FORBIDDEN));

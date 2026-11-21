@@ -11,6 +11,7 @@ import StudentHome from './pages/student/Home'
 import MyAttendance from './pages/student/MyAttendance'
 import Profile from './pages/Profile'
 import Timetable from './pages/Timetable'
+import Requests from './pages/Requests'
 
 // 카메라·QR 라이브러리는 그 화면을 열 때만 내려받는다
 const QrScreen = lazy(() => import('./pages/admin/QrScreen'))
@@ -49,6 +50,7 @@ export default function App() {
       <Route path="/student" element={<RequireRole role="STUDENT"><StudentHome /></RequireRole>} />
       <Route path="/profile" element={<RequireRole><Profile /></RequireRole>} />
       <Route path="/timetable" element={<RequireRole><Timetable /></RequireRole>} />
+      <Route path="/requests" element={<RequireRole><Requests /></RequireRole>} />
       <Route path="/student/profile" element={<Navigate to="/profile" replace />} />
       <Route path="/student/courses/:courseId" element={<RequireRole role="STUDENT"><MyAttendance /></RequireRole>} />
       <Route path="/scan" element={<RequireRole role="STUDENT"><Scan /></RequireRole>} />

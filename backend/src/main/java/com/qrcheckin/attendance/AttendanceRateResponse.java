@@ -14,6 +14,7 @@ public record AttendanceRateResponse(
             long presentCount,
             long lateCount,
             long absentCount,
+            long excusedCount,
             long convertedAbsences,
             double attendanceRate
     ) {

@@ -102,6 +102,7 @@ input[type="checkbox"] { width: 20px; height: 20px; min-width: 20px; padding: 0;
 .badge-present { background: var(--ok-bg); color: var(--ok); }
 .badge-late { background: var(--late-bg); color: var(--late); }
 .badge-absent { background: var(--bad-bg); color: var(--bad); }
+.badge-excused { background: #efe9fb; color: #6b4fbb; }
 .badge-none { background: #eef0f4; color: var(--muted); }
 .badge-s-scheduled { background: #eef0f4; color: var(--muted); }
 .badge-s-open { background: #e8f0fe; color: var(--primary); }
@@ -145,6 +146,7 @@ tr:last-child td { border-bottom: none; }
 .seg-sm button.on.present { background: var(--ok); color: #fff; }
 .seg-sm button.on.late { background: var(--late); color: #fff; }
 .seg-sm button.on.absent { background: var(--bad); color: #fff; }
+.seg-sm button.on.excused { background: #6b4fbb; color: #fff; }
 
 /* QR 화면 */
 .qr-page { min-height: 100vh; background: #fff; display: flex; flex-direction: column; }
@@ -288,3 +290,31 @@ tr:last-child td { border-bottom: none; }
 .account-pw label .muted { font-weight: 400; }
 .account-value.wrap { white-space: normal; }
 .push-banner { border-color: var(--line); }
+
+/* 출석 인정 */
+select.input, textarea.input { font: inherit; font-weight: 400; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; width: 100%; min-width: 0; }
+textarea.input { resize: vertical; min-height: 88px; line-height: 1.5; }
+select.input:focus, textarea.input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+.req-card { display: flex; flex-direction: column; gap: 6px; }
+.req-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.req-when { margin-left: auto; }
+.req-status { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.req-pending { background: #fff4e0; color: #b26a00; }
+.req-approved { background: var(--ok-bg); color: var(--ok); }
+.req-rejected { background: var(--bad-bg); color: var(--bad); }
+.req-canceled { background: #eef0f4; color: var(--muted); }
+.req-type { font-size: 0.85rem; font-weight: 700; }
+.req-change { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.req-reason { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
+.req-review { background: #f5f7fb; border-radius: 8px; padding: 8px 10px; }
+.req-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.req-actions input { flex: 1; min-width: 160px; padding: 8px 10px; }
+.choice-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.choice { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 12px; font: inherit; cursor: pointer; text-align: left; flex: 1; min-width: 130px; }
+.choice.on { border-color: var(--primary); background: #e8f0fe; }
+.choice:disabled { opacity: 0.45; cursor: not-allowed; }
+.choice b { display: block; font-size: 0.95rem; }
+.choice span { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+.menu-count { margin-left: auto; background: var(--bad); color: #fff; border-radius: 999px; font-size: 0.75rem; font-weight: 700; padding: 1px 8px; }
+.file-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 400; }
+.req-card > .link-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; }

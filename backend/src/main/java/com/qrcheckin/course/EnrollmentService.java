@@ -1,5 +1,7 @@
 package com.qrcheckin.course;
 
+import com.qrcheckin.common.DependentDataCleaner;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -22,13 +24,16 @@ import com.qrcheckin.user.UserRepository;
 public class EnrollmentService {
 
     private final CourseService courseService;
+    private final DependentDataCleaner cleaner;
     private final EnrollmentRepository enrollmentRepository;
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
 
     public EnrollmentService(CourseService courseService, EnrollmentRepository enrollmentRepository,
-                             AttendanceRepository attendanceRepository, UserRepository userRepository) {
+                             AttendanceRepository attendanceRepository, UserRepository userRepository,
+                             DependentDataCleaner cleaner) {
         this.courseService = courseService;
+        this.cleaner = cleaner;
         this.enrollmentRepository = enrollmentRepository;
         this.attendanceRepository = attendanceRepository;
         this.userRepository = userRepository;
@@ -68,6 +73,7 @@ public class EnrollmentService {
         courseService.getOwnedCourse(courseId, admin);
         Enrollment enrollment = enrollmentRepository.findByCourseIdAndUserId(courseId, userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "등록된 수강생이 아니에요"));
+        cleaner.forStudentInCourse(courseId, userId); // 수정 이력·출석 인정 신청
         attendanceRepository.deleteBySessionCourseIdAndUserId(courseId, userId);
         enrollmentRepository.delete(enrollment);
     }

@@ -62,7 +62,7 @@ function locationError(code) {
   return err
 }
 
-export const STATUS_LABEL = { PRESENT: '출석', LATE: '지각', ABSENT: '결석' }
+export const STATUS_LABEL = { PRESENT: '출석', LATE: '지각', ABSENT: '결석', EXCUSED: '공결' }
 export const SESSION_LABEL = { SCHEDULED: '예정', OPEN: '출석 중', CLOSED: '마감' }
 
 export function fmtDateTime(s) {

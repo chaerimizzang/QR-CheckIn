@@ -1,5 +1,7 @@
 package com.qrcheckin.session;
 
+import com.qrcheckin.common.DependentDataCleaner;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,12 +23,15 @@ public class SessionService {
     static final int DEFAULT_RADIUS_M = 50;
 
     private final ClassSessionRepository sessionRepository;
+    private final DependentDataCleaner cleaner;
     private final CourseService courseService;
     private final int defaultCheckinMinutes;
 
     public SessionService(ClassSessionRepository sessionRepository, CourseService courseService,
-                          @Value("${app.checkin.default-minutes}") int defaultCheckinMinutes) {
+                          @Value("${app.checkin.default-minutes}") int defaultCheckinMinutes,
+                          DependentDataCleaner cleaner) {
         this.sessionRepository = sessionRepository;
+        this.cleaner = cleaner;
         this.courseService = courseService;
         this.defaultCheckinMinutes = defaultCheckinMinutes;
     }
@@ -68,6 +73,7 @@ public class SessionService {
     public void delete(Long sessionId, AuthUser admin) {
         ClassSession session = getOwnedSession(sessionId, admin);
         requireScheduled(session);
+        cleaner.forSession(sessionId); // 출석 인정 신청·미리 승인된 공결 기록
         sessionRepository.delete(session);
     }
 

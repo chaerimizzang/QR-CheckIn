@@ -160,6 +160,7 @@ public class CheckinService {
             case PRESENT -> "출석";
             case LATE -> "지각";
             case ABSENT -> "결석";
+            case EXCUSED -> "공결";
         };
     }
 

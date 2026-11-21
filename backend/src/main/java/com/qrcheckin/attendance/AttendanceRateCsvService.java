@@ -37,6 +37,7 @@ public class AttendanceRateCsvService {
                                      "출석",
                                      "지각",
                                      "결석",
+                                     "공결",
                                      "환산 결석",
                                      "출석률"
                              )
@@ -52,6 +53,7 @@ public class AttendanceRateCsvService {
                         student.presentCount(),
                         student.lateCount(),
                         student.absentCount(),
+                        student.excusedCount(),
                         student.convertedAbsences(),
                         student.attendanceRate() + "%"
                 );

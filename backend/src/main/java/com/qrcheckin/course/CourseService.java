@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.qrcheckin.attendance.AttendanceRepository;
 import com.qrcheckin.auth.AuthUser;
 import com.qrcheckin.common.ApiException;
+import com.qrcheckin.common.DependentDataCleaner;
 import com.qrcheckin.common.ErrorCode;
 import com.qrcheckin.course.CourseDtos.CourseRequest;
 import com.qrcheckin.course.CourseDtos.CourseResponse;
@@ -20,6 +21,7 @@ import com.qrcheckin.user.UserRepository;
 @Service
 public class CourseService {
 
+    private final DependentDataCleaner cleaner;
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ClassSessionRepository sessionRepository;
@@ -29,7 +31,9 @@ public class CourseService {
 
     public CourseService(CourseRepository courseRepository, EnrollmentRepository enrollmentRepository,
                          ClassSessionRepository sessionRepository, AttendanceRepository attendanceRepository,
-                         UserRepository userRepository, CourseScheduleRepository scheduleRepository) {
+                         UserRepository userRepository, CourseScheduleRepository scheduleRepository,
+                         DependentDataCleaner cleaner) {
+        this.cleaner = cleaner;
         this.scheduleRepository = scheduleRepository;
         this.courseRepository = courseRepository;
         this.enrollmentRepository = enrollmentRepository;
@@ -79,6 +83,7 @@ public class CourseService {
     @Transactional
     public void delete(Long courseId, AuthUser user) {
         Course course = getOwnedCourse(courseId, user);
+        cleaner.forCourse(courseId); // 수정 이력·출석 인정 신청
         attendanceRepository.deleteBySessionCourseId(courseId);
         sessionRepository.deleteByCourseId(courseId);
         enrollmentRepository.deleteByCourseId(courseId);

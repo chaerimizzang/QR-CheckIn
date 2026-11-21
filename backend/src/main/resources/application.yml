@@ -17,6 +17,11 @@ spring:
         format_sql: true
   jackson:
     time-zone: Asia/Seoul
+  servlet:
+    multipart:
+      # 출석 인정 증빙 파일(5MB) + 여유
+      max-file-size: 5MB
+      max-request-size: 6MB
   web:
     resources:
       cache:

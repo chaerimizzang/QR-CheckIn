@@ -70,6 +70,7 @@ public class AttendanceStatisticsService {
             long present = 0;
             long late = 0;
             long absent = 0;
+            long excused = 0;
 
             for (Enrollment enrollment : enrollments) {
 
@@ -81,6 +82,8 @@ public class AttendanceStatisticsService {
                     present++;
                 } else if (status == AttendanceStatus.LATE) {
                     late++;
+                } else if (status == AttendanceStatus.EXCUSED) {
+                    excused++; // 공결은 결석으로 세지 않는다
                 } else {
                     // 종료된 회차에 기록이 없으면 결석으로 처리
                     absent++;
@@ -94,7 +97,8 @@ public class AttendanceStatisticsService {
                             session.getSessionNo(),
                             present,
                             late,
-                            absent
+                            absent,
+                            excused
                     )
             );
         }
