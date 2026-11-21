@@ -46,7 +46,7 @@ public class RequestNotifier {
     /** 교수가 승인·반려 → 학생에게 */
     public void reviewed(RequestRow r) {
         boolean ok = r.status() == RequestStatus.APPROVED;
-        String body = day(r.scheduledAt()) + " 수업 " + (ok ? result(r.requestedStatus()) + " 인정됐어요" : "신청이 반려됐어요")
+        String body = day(r.scheduledAt()) + " 수업 " + (ok ? "출석 인정됐어요" : "신청이 반려됐어요")
                 + (r.reviewComment() != null ? " · " + r.reviewComment() : "");
         send(List.of(r.studentId()), new PushMessage("출석 인정 " + (ok ? "승인" : "반려") + " [" + r.courseTitle() + "]",
                 body, "/requests", "request-" + r.id()));

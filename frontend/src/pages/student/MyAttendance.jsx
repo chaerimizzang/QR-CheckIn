@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { get } from '../../api'
-import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
-import { STATUS_LABEL, WARNING, fmtDateTime } from '../../util'
+import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
+import { SESSION_LABEL, STATUS_LABEL, WARNING, fmtDateTime } from '../../util'
 
 /** 출석 인정을 신청할 수 있는 회차: 결석·지각이거나, 아직 열리지 않은(미리 공결) 회차 */
-const canRequest = (s) => s.status === 'ABSENT' || s.status === 'LATE' || (!s.status && s.sessionStatus !== 'OPEN')
+/** 날짜가 지났는데 출석을 열지 않은 회차(진행하지 않은 수업) */
+const neverHeld = (s) => s.sessionStatus === 'SCHEDULED' && new Date(s.scheduledAt) < new Date()
+const canRequest = (s) => s.status === 'ABSENT' || s.status === 'LATE' || (!s.status && s.sessionStatus !== 'OPEN' && !neverHeld(s))
 
 /** S-04 내 출결 */
 export default function MyAttendance() {
@@ -44,21 +46,21 @@ export default function MyAttendance() {
           </div>
           {data.sessions.length === 0 ? <Empty>아직 회차가 없어요.</Empty> : (
             <div className="list">
-              {data.sessions.map((s) => (
+              {[...data.sessions].sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt)).map((s) => (
                 <div key={s.sessionId} className="card list-item">
                   <div>
                     <div className="item-title">{s.sessionNo}회차</div>
                     <div className="muted small">{fmtDateTime(s.scheduledAt)}</div>
                   </div>
-                  <div className="right att-right">
-                    {s.status
-                      ? <span className={`badge badge-lg badge-${s.status.toLowerCase()}`}>{STATUS_LABEL[s.status]}</span>
-                      : <SessionBadge status={s.sessionStatus} />}
+                  <div className="att-right">
                     {canRequest(s) && (
                       <Link className="link-btn small" to={`/requests?new=1&course=${courseId}&session=${s.sessionId}`}>
                         출석 인정 신청
                       </Link>
                     )}
+                    {s.status
+                      ? <span className={`badge badge-lg badge-${s.status.toLowerCase()}`}>{STATUS_LABEL[s.status]}</span>
+                      : <span className={`badge badge-lg badge-s-${s.sessionStatus.toLowerCase()}`}>{neverHeld(s) ? '미진행' : SESSION_LABEL[s.sessionStatus]}</span>}
                   </div>
                 </div>
               ))}

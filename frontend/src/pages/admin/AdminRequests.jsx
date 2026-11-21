@@ -70,10 +70,8 @@ export default function AdminRequests() {
                   <input placeholder="의견 (반려할 때 필수)" maxLength={300} value={comment}
                     onChange={(e) => setComment(e.target.value)} disabled={busy} />
                   <div className="req-actions">
-                    <button className="btn btn-primary" disabled={busy} onClick={() => review(r, 'approve', 'EXCUSED')}>공결로 인정</button>
-                    {r.sessionStatus !== 'SCHEDULED' && (
-                      <button className="btn btn-primary" disabled={busy} onClick={() => review(r, 'approve', 'PRESENT')}>출석으로 인정</button>
-                    )}
+                    {/* 인정 = 공결(출석 인정) 처리: 그 회차는 출석률 계산에서 빠진다 */}
+                    <button className="btn btn-primary" disabled={busy} onClick={() => review(r, 'approve', 'EXCUSED')}>인정</button>
                     <button className="btn" disabled={busy} onClick={() => review(r, 'reject')}>반려</button>
                   </div>
                 </div>

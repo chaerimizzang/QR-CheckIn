@@ -77,7 +77,9 @@ public class AttendanceRequestService {
         for (Attendance a : attendances.findByUserIdAndSessionCourseIdOrderBySessionSessionNoAsc(student.id(), courseId)) {
             mine.put(a.getSession().getId(), a.getStatus());
         }
+        LocalDateTime now = LocalDateTime.now(clock);
         return sessions.findByCourseIdOrderBySessionNoAsc(courseId).stream()
+                .filter(s -> !neverHeld(s, now)) // 날짜가 지났는데 한 번도 열지 않은 회차는 수업이 없었던 것
                 .map(s -> new SessionOption(s.getId(), s.getSessionNo(), s.getScheduledAt(), s.getStatus(),
                         mine.get(s.getId()),
                         requests.existsBySessionIdAndStudentIdAndStatus(s.getId(), student.id(), RequestStatus.PENDING)))
@@ -101,6 +103,9 @@ public class AttendanceRequestService {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, "사유를 1~500자로 입력해 주세요");
         }
 
+        if (neverHeld(session, LocalDateTime.now(clock))) {
+            throw notAllowed("진행하지 않은 수업이에요");
+        }
         AttendanceStatus current = attendances.findBySessionIdAndUserId(sessionId, student.id())
                 .map(Attendance::getStatus).orElse(null);
         AttendanceStatus target = targetStatus(type, requested, session, current);
@@ -295,6 +300,11 @@ public class AttendanceRequestService {
 
     private static String blankToNull(String s) {
         return s == null || s.isBlank() ? null : s.strip();
+    }
+
+    /** 예정 상태인데 수업 시간이 이미 지남 = 출석을 열지 않은(진행하지 않은) 회차 */
+    static boolean neverHeld(ClassSession s, LocalDateTime now) {
+        return s.getStatus() == SessionStatus.SCHEDULED && s.getScheduledAt() != null && s.getScheduledAt().isBefore(now);
     }
 
     private static ApiException notAllowed(String message) {
