@@ -19,7 +19,7 @@ public final class AttendanceDtos {
                             AttendanceSource source) {
     }
 
-    public record Summary(long enrolled, long present, long late, long absent, long excused, long pending) {
+    public record Summary(long enrolled, long present, long late, long absent, long pending) {
     }
 
     public record RosterResponse(Long sessionId, int sessionNo, SessionStatus sessionStatus,

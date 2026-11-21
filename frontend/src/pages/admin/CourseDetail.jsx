@@ -167,7 +167,6 @@ export default function CourseDetail() {
                       <th>출석</th>
                       <th>지각</th>
                       <th>결석</th>
-                      <th>공결</th>
                       <th>환산 결석</th>
                       <th>출석률</th>
                       <th>F 기준</th>
@@ -189,7 +188,6 @@ export default function CourseDetail() {
                         <td>{rate?.presentCount ?? '-'}</td>
                         <td>{rate?.lateCount ?? '-'}</td>
                         <td>{rate?.absentCount ?? '-'}</td>
-                        <td>{rate?.excusedCount ?? '-'}</td>
                         <td>{rate?.convertedAbsences ?? '-'}</td>
                         <td>
                           {rate

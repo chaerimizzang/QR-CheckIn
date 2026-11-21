@@ -132,9 +132,9 @@ class AbsenceWarningTest {
         warnings.checkAll();
         assertThat(transport.endpoints).hasSize(2);
 
-        // 공결로 바꾸면 단계가 내려가고(알림 없음), 다시 결석해도 그 단계부터 알린다
+        // 출석으로 바꾸면(출석 인정 등) 단계가 내려가고 알림은 없다
         transport.endpoints.clear();
-        call(put("/api/v1/sessions/" + s[1] + "/attendances/" + kimId), prof, "{\"status\":\"EXCUSED\"}")
+        call(put("/api/v1/sessions/" + s[1] + "/attendances/" + kimId), prof, "{\"status\":\"PRESENT\"}")
                 .andExpect(status().isOk());
         warnings.checkAll();
         assertThat(transport.endpoints).isEmpty();

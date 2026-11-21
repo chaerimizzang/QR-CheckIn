@@ -89,7 +89,6 @@ public class StudentProfileService {
                 r.presentCount(),
                 r.lateCount(),
                 r.absentCount(),
-                r.excusedCount(),
                 r.convertedAbsences(),
                 total == 0 ? null : r.attendanceRate(),
                 r.remainingAbsences(),

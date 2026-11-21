@@ -8,8 +8,8 @@ import { STATUS_LABEL, fmtTime } from '../../util'
 
 const MAX_MB = 5
 
-/** 신청할 수 있는 날짜: 이미 출석·공결이 아니고 처리 중인 신청이 없는 날(앞으로의 수업도 미리 신청 가능) */
-const allowed = (o) => !!o && !o.pending && o.myStatus !== 'PRESENT' && o.myStatus !== 'EXCUSED' 
+/** 신청할 수 있는 날짜: 아직 출석이 아니고 처리 중인 신청이 없는 날(앞으로의 수업도 미리 신청 가능) */
+const allowed = (o) => !!o && !o.pending && o.myStatus !== 'PRESENT'
 
 function dateLabel(o) {
   const st = o.myStatus ? STATUS_LABEL[o.myStatus] : o.sessionStatus === 'SCHEDULED' ? '예정' : '미정'
@@ -75,8 +75,8 @@ export default function StudentRequests() {
     e.preventDefault()
     setBusy(true); setError(null); setDone('')
     try {
-      // 종류는 나누지 않는다 — 무엇으로 인정할지(공결·출석)는 교수가 승인할 때 정한다
-      await upload(`/sessions/${sessionId}/requests`, file, 'file', { type: 'EXCUSE', reason })
+      // 인정되면 그 회차가 출석이 된다
+      await upload(`/sessions/${sessionId}/requests`, file, 'file', { reason })
       setDone('신청했어요. 교수님이 확인하면 알림으로 알려 드려요')
       reset(); setFormOpen(false); setParams({}, { replace: true })
       load()

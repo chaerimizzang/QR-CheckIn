@@ -82,9 +82,7 @@ public class AttendanceService {
         long present = rows.stream().filter(r -> r.status() == AttendanceStatus.PRESENT).count();
         long late = rows.stream().filter(r -> r.status() == AttendanceStatus.LATE).count();
         long absent = rows.stream().filter(r -> r.status() == AttendanceStatus.ABSENT).count();
-        long excused = rows.stream().filter(r -> r.status() == AttendanceStatus.EXCUSED).count();
-        Summary summary = new Summary(rows.size(), present, late, absent, excused,
-                rows.size() - present - late - absent - excused);
+        Summary summary = new Summary(rows.size(), present, late, absent, rows.size() - present - late - absent);
 
         return new RosterResponse(session.getId(), session.getSessionNo(), session.getStatus(),
                 session.getOpenedAt(), session.getClosedAt(), summary, rows);

@@ -22,7 +22,7 @@ import com.qrcheckin.push.PushService;
 /**
  * 결석 경고 알림. 주기적으로(기본 2분) 교육마다 수강생의 F 기준 단계를 계산해서,
  * 단계가 올라가면(주의 → 위험 → F) 학생에게 알리고, 위험·F 는 교수에게도 알린다.
- * 단계가 내려가면(공결 승인 등) 기록만 낮추고 알리지 않는다.
+ * 단계가 내려가면(출석 인정 승인 등) 기록만 낮추고 알리지 않는다.
  */
 @Service
 public class AbsenceWarningService {

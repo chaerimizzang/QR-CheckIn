@@ -28,7 +28,7 @@ import com.qrcheckin.request.RequestDtos.SessionOption;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 
-/** 출석 인정(공결·정정 신청) */
+/** 출석 인정 신청 */
 @RestController
 @RequestMapping("/api/v1")
 public class AttendanceRequestController {
@@ -51,11 +51,11 @@ public class AttendanceRequestController {
     }
 
     @Operation(summary = "출석 인정 신청(사유 + 증빙 파일 선택)",
-            description = "multipart: type=EXCUSE|CORRECTION, requestedStatus=PRESENT|LATE(정정일 때), reason, file(선택, 5MB)")
+            description = "multipart: reason, file(선택, 5MB). 인정되면 출석")
     @PostMapping(value = "/sessions/{sessionId}/requests", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('STUDENT')")
     public RequestRow submit(@PathVariable Long sessionId,
-                             @RequestParam RequestType type,
+                             @RequestParam(required = false) RequestType type,
                              @RequestParam(required = false) AttendanceStatus requestedStatus,
                              @RequestParam String reason,
                              @RequestParam(required = false) MultipartFile file,
@@ -95,12 +95,12 @@ public class AttendanceRequestController {
         return new PendingCount(service.pendingCount(user));
     }
 
-    @Operation(summary = "승인 — status(EXCUSED 공결·PRESENT 출석·LATE 지각)로 출결이 바뀌고 수정 이력이 남는다")
+    @Operation(summary = "인정 — 그 회차가 출석으로 바뀌고 수정 이력이 남는다")
     @PostMapping("/requests/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
     public RequestRow approve(@PathVariable Long id, @Valid @RequestBody(required = false) ReviewRequest req,
                               @AuthenticationPrincipal AuthUser user) {
-        RequestRow row = service.approve(id, user, req == null ? null : req.comment(), req == null ? null : req.status());
+        RequestRow row = service.approve(id, user, req == null ? null : req.comment());
         notifier.reviewed(row);
         return row;
     }

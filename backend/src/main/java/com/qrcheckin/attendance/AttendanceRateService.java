@@ -120,7 +120,6 @@ public class AttendanceRateService {
         long present = 0;
         long late = 0;
         long absent = 0;
-        long excused = 0;
 
         for (ClassSession session : closedSessions) {
 
@@ -137,7 +136,6 @@ public class AttendanceRateService {
                 case PRESENT -> present++;
                 case LATE -> late++;
                 case ABSENT -> absent++;
-                case EXCUSED -> excused++;
             }
         }
 
@@ -147,15 +145,12 @@ public class AttendanceRateService {
         // F 기준(결석이 전체 수업의 1/4 초과) 경고
         AbsenceRule.Status warning = AbsenceRule.of(plannedSessions, convertedAbsences, failRatio);
 
-        // 출석률 계산 — 공결(출석 인정) 회차는 분모에서 뺀다
-        long counted = totalSessions - excused;
+        // 출석률 계산
         double attendanceRate = totalSessions == 0
                 ? 0.0
-                : counted == 0
-                ? 100.0
                 : Math.round(
-                        (counted - convertedAbsences)
-                                * 10000.0 / counted
+                        (totalSessions - convertedAbsences)
+                                * 10000.0 / totalSessions
                   ) / 100.0;
 
         return new StudentRate(
@@ -165,7 +160,6 @@ public class AttendanceRateService {
                 present,
                 late,
                 absent,
-                excused,
                 convertedAbsences,
                 attendanceRate,
                 warning.remaining(),

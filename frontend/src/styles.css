@@ -102,7 +102,6 @@ input[type="checkbox"] { width: 20px; height: 20px; min-width: 20px; padding: 0;
 .badge-present { background: var(--ok-bg); color: var(--ok); }
 .badge-late { background: var(--late-bg); color: var(--late); }
 .badge-absent { background: var(--bad-bg); color: var(--bad); }
-.badge-excused { background: #efe9fb; color: #6b4fbb; }
 .badge-none { background: #eef0f4; color: var(--muted); }
 .badge-s-scheduled { background: #eef0f4; color: var(--muted); }
 .badge-s-open { background: #e8f0fe; color: var(--primary); }
@@ -146,7 +145,6 @@ tr:last-child td { border-bottom: none; }
 .seg-sm button.on.present { background: var(--ok); color: #fff; }
 .seg-sm button.on.late { background: var(--late); color: #fff; }
 .seg-sm button.on.absent { background: var(--bad); color: #fff; }
-.seg-sm button.on.excused { background: #6b4fbb; color: #fff; }
 
 /* QR 화면 */
 .qr-page { min-height: 100vh; background: #fff; display: flex; flex-direction: column; }

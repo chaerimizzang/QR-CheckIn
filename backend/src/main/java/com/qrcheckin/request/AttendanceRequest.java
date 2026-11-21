@@ -19,7 +19,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/** 출석 인정 신청(공결·정정). 학생이 내고 교수가 승인·반려한다 */
+/** 출석 인정 신청. 학생이 내고 교수가 인정·반려한다 */
 @Entity
 @Table(name = "attendance_request", indexes = {
         @Index(name = "idx_request_session_student", columnList = "session_id, student_id"),
@@ -43,7 +43,7 @@ public class AttendanceRequest {
     @Column(nullable = false, length = 20, columnDefinition = "varchar(20)")
     private RequestType type;
 
-    /** 승인되면 바뀔 상태(공결이면 EXCUSED) */
+    /** 인정되면 바뀔 상태(출석) */
     @Enumerated(EnumType.STRING)
     @Column(name = "requested_status", nullable = false, length = 20, columnDefinition = "varchar(20)")
     private AttendanceStatus requestedStatus;
@@ -91,7 +91,7 @@ public class AttendanceRequest {
         this.createdAt = now;
     }
 
-    /** 승인: 교수가 고른 상태(공결·출석·지각)로 인정한다 */
+    /** 인정 */
     public void approve(User reviewer, AttendanceStatus result, String comment, LocalDateTime now) {
         this.requestedStatus = result;
         review(RequestStatus.APPROVED, reviewer, comment, now);

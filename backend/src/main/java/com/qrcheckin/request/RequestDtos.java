@@ -48,12 +48,8 @@ public final class RequestDtos {
         }
     }
 
-    /**
-     * 교수의 승인·반려(반려는 사유 필수 — 서비스에서 검사).
-     * status: 승인할 때 어떤 상태로 인정할지(EXCUSED 공결 · PRESENT 출석 · LATE 지각). 비우면 신청한 상태
-     */
-    public record ReviewRequest(@Size(max = 300, message = "의견은 300자 이내로 입력해 주세요") String comment,
-                                AttendanceStatus status) {
+    /** 교수의 인정·반려(반려는 사유 필수 — 서비스에서 검사) */
+    public record ReviewRequest(@Size(max = 300, message = "의견은 300자 이내로 입력해 주세요") String comment) {
     }
 
     public record PendingCount(long pending) {

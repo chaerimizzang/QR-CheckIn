@@ -57,7 +57,7 @@ export default function AttendanceOverview() {
                         </div>
                         <div className="rate-foot small">
                           <span className="muted">
-                            마감 {c.totalSessions}회{c.excusedCount > 0 && ` · 공결 ${c.excusedCount}`}{c.convertedAbsences > c.absentCount && ` · 인정 결석 ${c.convertedAbsences}`}
+                            마감 {c.totalSessions}회{c.convertedAbsences > c.absentCount && ` · 인정 결석 ${c.convertedAbsences}`}
                           </span>
                           <Icon name="chevron" size={20} className="chevron" />
                         </div>

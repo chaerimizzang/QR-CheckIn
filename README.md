@@ -132,11 +132,11 @@ DB_URL='jdbc:mysql://localhost:3306/qrcheckin?serverTimezone=Asia/Seoul' DB_PASS
 | GET | `/me` | 내 정보 | 로그인 |
 | PUT | `/me/name` | 이름 변경 `{"name":"..."}` | 로그인 |
 | POST | `/me/password` | 비밀번호 변경 (`currentPassword`, `newPassword`, `confirmPassword`) | 로그인 |
-| POST | `/sessions/{id}/requests` | 출석 인정 신청(multipart: `type`=EXCUSE·CORRECTION, `requestedStatus`, `reason`, `file` 선택 5MB) | 수강생 |
+| POST | `/sessions/{id}/requests` | 출석 인정 신청(multipart: `reason`, `file` 선택 5MB) | 수강생 |
 | GET | `/courses/{id}/request-options` | 신청할 수 있는 회차와 내 출결 상태 | 수강생 |
 | GET | `/me/requests` · POST `/requests/{id}/cancel` | 내 신청 목록 · 처리 전 취소 | 수강생 |
 | GET | `/requests` · `/requests/pending-count` | 내 교육들의 신청 목록 · 대기 수 | 관리자 |
-| POST | `/requests/{id}/approve` · `/requests/{id}/reject` | 승인 `{"status":"EXCUSED·PRESENT·LATE","comment"}`(출결 변경 + 수정 이력) · 반려(`comment` 필수) | 관리자 |
+| POST | `/requests/{id}/approve` · `/requests/{id}/reject` | 인정(출석으로 변경 + 수정 이력) · 반려(`comment` 필수) | 관리자 |
 | GET | `/requests/{id}/evidence` | 증빙 파일(신청한 학생·담당 교수만) | 로그인 |
 | GET | `/semesters` · `/semesters/current` | 학기 선택 목록 · 현재 학기 | 로그인 |
 | GET | `/courses/{id}/finalize-check` | 출결 확정 전 확인(진행 중 회차·대기 신청·지워질 예정 회차) | 관리자 |
@@ -181,7 +181,7 @@ curl -X POST localhost:8080/api/v1/auth/login -H "Content-Type: application/json
 
 ## 출석 인정 · 결석 경고
 
-- **출석 인정**(메뉴): 학생은 수업 날짜를 골라 사유와 증빙 파일(선택)만 내고, 교수가 **공결로 인정 / 출석으로 인정 / 반려** 중에서 고릅니다(아직 열리지 않은 수업은 공결만). 승인하면 출결이 바뀌고 수정 이력이 남습니다. 공결 회차는 출석률 계산에서 빠집니다.
+- **출석 인정**(메뉴): 학생은 수업 날짜를 골라 사유와 증빙 사진(선택)만 내고, 교수가 **인정 / 반려**(반려는 사유 필수)합니다. 인정하면 그 회차가 출석으로 바뀌고 수정 이력이 남습니다. 앞으로의 수업도 미리 신청할 수 있고, 진행하지 않은 회차는 신청할 수 없습니다.
 - **결석 경고**: 인정 결석(결석 + 지각 3회당 1회)이 전체 회차의 1/4을 넘으면 F 기준입니다(`app.attendance.fail-ratio`). 2분마다 계산해서 단계가 올라가면(주의 → 위험 → F 기준 초과) 학생에게, 위험·F 기준 초과는 교수에게도 휴대폰 알림을 보냅니다. 프로필·내 출결·교육 상세(수강생 표)에도 표시됩니다.
 
 ## 학기 · 출결 확정

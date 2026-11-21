@@ -30,10 +30,10 @@ import com.qrcheckin.user.User;
 import com.qrcheckin.user.UserRepository;
 
 /**
- * 출석 인정(공결·정정 신청).
- * - 공결(EXCUSE): 결석·지각·미정 회차, 또는 아직 열리지 않은 회차(예비군처럼 미리 아는 경우) → 승인 시 공결
- * - 정정(CORRECTION): 출석을 시작했거나 마감된 회차의 결석·지각·미정 → 승인 시 출석 또는 지각
- * 승인하면 교수가 직접 바꾼 것과 똑같이 출결이 바뀌고 수정 이력이 남는다.
+ * 출석 인정 신청. 학생은 수업 날짜와 사유(증빙 선택)만 내고, 교수가 인정하면 그 회차가 출석이 된다.
+ * - 결석·지각·미정 회차, 또는 아직 열리지 않은 회차(예비군처럼 미리 아는 경우)에 신청할 수 있다
+ * - 날짜가 지났는데 열지 않은(진행하지 않은) 회차는 신청할 수 없다
+ * 인정하면 교수가 직접 바꾼 것과 똑같이 출결이 바뀌고 수정 이력이 남는다.
  */
 @Service
 public class AttendanceRequestService {
@@ -95,9 +95,6 @@ public class AttendanceRequestService {
         if (session.getCourse().isFinalized()) {
             throw new ApiException(ErrorCode.COURSE_FINALIZED, "출결이 확정된 수업이라 신청할 수 없어요");
         }
-        if (type == null) {
-            throw new ApiException(ErrorCode.VALIDATION_FAILED, "신청 종류(공결·정정)를 골라 주세요");
-        }
         String text = reason == null ? "" : reason.strip();
         if (text.isEmpty() || text.length() > 500) {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, "사유를 1~500자로 입력해 주세요");
@@ -119,7 +116,8 @@ public class AttendanceRequestService {
             validateFile(file);
         }
         User me = users.getReferenceById(student.id());
-        AttendanceRequest saved = requests.save(new AttendanceRequest(session, me, type, target, current, text, hasFile,
+        AttendanceRequest saved = requests.save(new AttendanceRequest(session, me,
+                type == null ? RequestType.EXCUSE : type, target, current, text, hasFile,
                 LocalDateTime.now(clock)));
         if (hasFile) {
             try {
@@ -132,32 +130,13 @@ public class AttendanceRequestService {
         return RequestRow.from(requests.findById(saved.getId()).orElseThrow());
     }
 
-    /** 신청 종류·회차 상태·지금 출결로 승인 시 바뀔 상태를 정하고, 안 되는 신청이면 이유와 함께 막는다 */
+    /** 인정되면 출석이 된다. 이미 출석이면 신청할 필요가 없다 */
     static AttendanceStatus targetStatus(RequestType type, AttendanceStatus requested, ClassSession session,
                                          AttendanceStatus current) {
-        if (type == RequestType.EXCUSE) {
-            if (current == AttendanceStatus.PRESENT) {
-                throw notAllowed("이미 출석한 회차예요");
-            }
-            if (current == AttendanceStatus.EXCUSED) {
-                throw notAllowed("이미 공결 처리된 회차예요");
-            }
-            return AttendanceStatus.EXCUSED;
+        if (current == AttendanceStatus.PRESENT) {
+            throw notAllowed("이미 출석 처리된 수업이에요");
         }
-        // 정정
-        if (session.getStatus() == SessionStatus.SCHEDULED) {
-            throw notAllowed("아직 출석을 시작하지 않은 회차는 정정할 수 없어요. 미리 빠질 일이 있으면 공결을 신청해 주세요");
-        }
-        if (requested != AttendanceStatus.PRESENT && requested != AttendanceStatus.LATE) {
-            throw notAllowed("정정은 출석 또는 지각으로만 신청할 수 있어요");
-        }
-        if (current == AttendanceStatus.PRESENT || current == AttendanceStatus.EXCUSED) {
-            throw notAllowed("이미 " + (current == AttendanceStatus.PRESENT ? "출석" : "공결") + " 처리된 회차예요");
-        }
-        if (current == AttendanceStatus.LATE && requested == AttendanceStatus.LATE) {
-            throw notAllowed("이미 지각으로 처리된 회차예요");
-        }
-        return requested;
+        return AttendanceStatus.PRESENT;
     }
 
     @Transactional(readOnly = true)
@@ -189,24 +168,15 @@ public class AttendanceRequestService {
         return requests.countBySessionCourseOwnerIdAndStatus(admin.id(), RequestStatus.PENDING);
     }
 
-    /**
-     * 승인. 학생은 사유만 내고, 무엇으로 인정할지(공결·출석·지각)는 교수가 정한다(비우면 신청한 상태 = 공결).
-     * 아직 열리지 않은 회차는 공결로만 인정할 수 있다.
-     */
+    /** 인정: 그 회차를 출석으로 바꾼다 */
     @Transactional
-    public RequestRow approve(Long requestId, AuthUser admin, String comment, AttendanceStatus result) {
+    public RequestRow approve(Long requestId, AuthUser admin, String comment) {
         AttendanceRequest r = ownedByProfessor(requestId, admin);
         requirePending(r);
-        AttendanceStatus to = result == null ? r.getRequestedStatus() : result;
-        if (to == AttendanceStatus.ABSENT) {
-            throw notAllowed("결석으로는 인정할 수 없어요. 인정하지 않으려면 반려해 주세요");
-        }
-        if (to != AttendanceStatus.EXCUSED && r.getSession().getStatus() == SessionStatus.SCHEDULED) {
-            throw notAllowed("아직 열리지 않은 수업은 공결로만 인정할 수 있어요");
-        }
         // 교수가 직접 바꾸는 것과 같은 경로 → 수정 이력이 남고, 마감 스케줄러가 덮어쓰지 않는다
-        attendanceService.changeStatus(r.getSession().getId(), r.getStudent().getId(), to, admin);
-        r.approve(users.getReferenceById(admin.id()), to, blankToNull(comment), LocalDateTime.now(clock));
+        attendanceService.changeStatus(r.getSession().getId(), r.getStudent().getId(), AttendanceStatus.PRESENT, admin);
+        r.approve(users.getReferenceById(admin.id()), AttendanceStatus.PRESENT, blankToNull(comment),
+                LocalDateTime.now(clock));
         return RequestRow.from(r);
     }
 

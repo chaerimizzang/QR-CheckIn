@@ -31,7 +31,7 @@ public class DependentDataCleaner {
                 + " where a.session.id in (" + SESSIONS_OF_COURSE + "))", "course", courseId, null, null);
     }
 
-    /** 회차 하나(출결 기록까지 지운다 — 예정 회차에도 미리 승인된 공결 기록이 있을 수 있다) */
+    /** 회차 하나(출결 기록까지 지운다 — 예정 회차에도 미리 인정된 출결 기록이 있을 수 있다) */
     public void forSession(Long sessionId) {
         run("delete from RequestEvidence e where e.requestId in (select r.id from AttendanceRequest r"
                 + " where r.session.id = :session)", "session", sessionId, null, null);

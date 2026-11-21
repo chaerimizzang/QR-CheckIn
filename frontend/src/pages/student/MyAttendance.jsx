@@ -4,7 +4,7 @@ import { get } from '../../api'
 import { Empty, ErrorBox, Layout, Loading } from '../../components/ui'
 import { SESSION_LABEL, STATUS_LABEL, WARNING, fmtDateTime } from '../../util'
 
-/** 출석 인정을 신청할 수 있는 회차: 결석·지각이거나, 아직 열리지 않은(미리 공결) 회차 */
+/** 출석 인정을 신청할 수 있는 회차: 결석·지각이거나, 아직 열리지 않은(미리 신청) 회차 */
 /** 날짜가 지났는데 출석을 열지 않은 회차(진행하지 않은 수업) */
 const neverHeld = (s) => s.sessionStatus === 'SCHEDULED' && new Date(s.scheduledAt) < new Date()
 const canRequest = (s) => s.status === 'ABSENT' || s.status === 'LATE' || (!s.status && s.sessionStatus !== 'OPEN' && !neverHeld(s))
@@ -42,7 +42,6 @@ export default function MyAttendance() {
             <span>출석 <b>{count('PRESENT')}</b></span>
             <span>지각 <b>{count('LATE')}</b></span>
             <span>결석 <b>{count('ABSENT')}</b></span>
-            {count('EXCUSED') > 0 && <span>공결 <b>{count('EXCUSED')}</b></span>}
           </div>
           {data.sessions.length === 0 ? <Empty>아직 회차가 없어요.</Empty> : (
             <div className="list">

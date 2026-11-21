@@ -22,15 +22,6 @@ public class RequestNotifier {
         this.pushService = pushService;
     }
 
-    static String result(com.qrcheckin.attendance.AttendanceStatus s) {
-        return switch (s) {
-            case PRESENT -> "출석으로";
-            case LATE -> "지각으로";
-            case EXCUSED -> "공결로";
-            case ABSENT -> "결석으로";
-        };
-    }
-
     /** 회차 번호 대신 수업 날짜: "11/20(금)" */
     static String day(java.time.LocalDateTime at) {
         return at == null ? "" : at.format(java.time.format.DateTimeFormatter.ofPattern("M/d(E)", java.util.Locale.KOREAN));

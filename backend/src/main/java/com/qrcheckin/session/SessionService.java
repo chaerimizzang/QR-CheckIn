@@ -76,7 +76,7 @@ public class SessionService {
         ClassSession session = getOwnedSession(sessionId, admin);
         session.getCourse().requireEditable();
         requireScheduled(session);
-        cleaner.forSession(sessionId); // 출석 인정 신청·미리 승인된 공결 기록
+        cleaner.forSession(sessionId); // 출석 인정 신청·미리 인정된 출결 기록
         sessionRepository.delete(session);
     }
 

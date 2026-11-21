@@ -17,7 +17,6 @@ public record AttendanceRateResponse(
             long presentCount,
             long lateCount,
             long absentCount,
-            long excusedCount,
             long convertedAbsences,
             double attendanceRate,
             /** F 기준까지 더 결석할 수 있는 수(회차가 없으면 null) */

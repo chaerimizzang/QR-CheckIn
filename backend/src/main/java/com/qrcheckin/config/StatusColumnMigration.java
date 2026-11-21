@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  * 출결 상태 열을 ENUM 에서 VARCHAR 로 바꾼다(한 번만, 이미 바뀌었으면 아무것도 안 함).
  *
  * 예전 버전의 Hibernate 가 MySQL·H2 에 상태 열을 ENUM('PRESENT','LATE','ABSENT') 로 만들어서,
- * 새 상태(EXCUSED = 공결)를 저장하면 오류가 난다. ddl-auto=update 는 열 종류를 바꿔 주지 않으므로 직접 바꾼다.
+ * 상태 값을 추가·변경하면 저장 오류가 난다. ddl-auto=update 는 열 종류를 바꿔 주지 않으므로 직접 바꾼다.
  */
 @Component
 @Order(0)
@@ -31,6 +31,15 @@ public class StatusColumnMigration implements ApplicationRunner {
             {"attendance", "status", "true"},
             {"attendance_history", "old_status", "false"},
             {"attendance_history", "new_status", "true"},
+    };
+
+    /** 예전 공결(EXCUSED) 값이 남아 있을 수 있는 열 */
+    private static final String[][] EXCUSED_COLUMNS = {
+            {"attendance", "status"},
+            {"attendance_history", "old_status"},
+            {"attendance_history", "new_status"},
+            {"attendance_request", "requested_status"},
+            {"attendance_request", "status_at_request"},
     };
 
     private final DataSource dataSource;
@@ -58,8 +67,21 @@ public class StatusColumnMigration implements ApplicationRunner {
                     log.info("출결 상태 열 변경: {}.{} {} → VARCHAR(20)", col[0], col[1], type);
                 }
             }
+            // 공결(EXCUSED)을 없앴으므로, 예전에 공결로 저장된 기록은 출석으로 바꾼다(출석 인정 = 출석)
+            for (String[] col : EXCUSED_COLUMNS) {
+                if (columnType(md, c.getCatalog(), col[0], col[1]) == null) {
+                    continue;
+                }
+                try (Statement st = c.createStatement()) {
+                    int n = st.executeUpdate("UPDATE " + col[0] + " SET " + col[1] + " = 'PRESENT' WHERE " + col[1]
+                            + " = 'EXCUSED'");
+                    if (n > 0) {
+                        log.info("공결 기록 {}건을 출석으로 변경: {}.{}", n, col[0], col[1]);
+                    }
+                }
+            }
         } catch (Exception e) {
-            log.warn("출결 상태 열 확인 실패(공결 저장이 안 될 수 있음): {}", e.toString());
+            log.warn("출결 상태 열 확인 실패: {}", e.toString());
         }
     }
 
