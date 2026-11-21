@@ -1,5 +1,7 @@
 package com.qrcheckin.session;
 
+import com.qrcheckin.common.DependentDataCleaner;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,12 +23,15 @@ public class SessionService {
     static final int DEFAULT_RADIUS_M = 50;
 
     private final ClassSessionRepository sessionRepository;
+    private final DependentDataCleaner cleaner;
     private final CourseService courseService;
     private final int defaultCheckinMinutes;
 
     public SessionService(ClassSessionRepository sessionRepository, CourseService courseService,
-                          @Value("${app.checkin.default-minutes}") int defaultCheckinMinutes) {
+                          @Value("${app.checkin.default-minutes}") int defaultCheckinMinutes,
+                          DependentDataCleaner cleaner) {
         this.sessionRepository = sessionRepository;
+        this.cleaner = cleaner;
         this.courseService = courseService;
         this.defaultCheckinMinutes = defaultCheckinMinutes;
     }
@@ -41,6 +46,7 @@ public class SessionService {
     @Transactional
     public SessionResponse create(Long courseId, SessionRequest req, AuthUser admin) {
         Course course = courseService.getOwnedCourse(courseId, admin);
+        course.requireEditable(); // 출결이 확정된 교육은 읽기 전용
         validateLocationPair(req);
         int sessionNo = sessionRepository.findMaxSessionNo(courseId) + 1;
         ClassSession session = new ClassSession(course, sessionNo, req.scheduledAt(),
@@ -57,6 +63,7 @@ public class SessionService {
     @Transactional
     public SessionResponse update(Long sessionId, SessionRequest req, AuthUser admin) {
         ClassSession session = getOwnedSession(sessionId, admin);
+        session.getCourse().requireEditable();
         requireScheduled(session);
         validateLocationPair(req);
         session.updateConditions(req.scheduledAt(), req.latitude(), req.longitude(),
@@ -67,7 +74,9 @@ public class SessionService {
     @Transactional
     public void delete(Long sessionId, AuthUser admin) {
         ClassSession session = getOwnedSession(sessionId, admin);
+        session.getCourse().requireEditable();
         requireScheduled(session);
+        cleaner.forSession(sessionId); // 출석 인정 신청·미리 인정된 출결 기록
         sessionRepository.delete(session);
     }
 

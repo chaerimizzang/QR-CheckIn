@@ -62,6 +62,40 @@ function locationError(code) {
   return err
 }
 
+/** 학기 — 서버 Semester 와 같은 규칙: 3~6월 1학기, 7~8월 여름, 9~12월 2학기, 1~2월 전년도 겨울 */
+export const TERMS = [
+  { term: 'SPRING', label: '1학기' },
+  { term: 'SUMMER', label: '여름학기' },
+  { term: 'FALL', label: '2학기' },
+  { term: 'WINTER', label: '겨울학기' },
+]
+export function semesterOf(date = new Date()) {
+  const y = date.getFullYear()
+  const m = date.getMonth() + 1
+  if (m <= 2) return { year: y - 1, term: 'WINTER' }
+  if (m <= 6) return { year: y, term: 'SPRING' }
+  if (m <= 8) return { year: y, term: 'SUMMER' }
+  return { year: y, term: 'FALL' }
+}
+export const semesterKey = (s) => `${s.year}-${s.term}`
+/** 학기 키("2026-FALL") 최신순 비교 — 키가 없으면 맨 뒤 */
+export function newestSemesterFirst(a, b) {
+  const rank = (k) => {
+    if (!k) return -1
+    const [y, t] = k.split('-')
+    return Number(y) * 10 + TERMS.findIndex((x) => x.term === t)
+  }
+  return rank(b) - rank(a)
+}
+export const semesterLabel = (s) => `${s.year}년 ${TERMS.find((t) => t.term === s.term)?.label ?? ''}`
+
+/** 결석 경고(F 기준) — 서버 AbsenceRule 과 같은 단계 */
+export const WARNING = {
+  WARNING: { label: '결석 주의', text: '2번 더 결석하면 F 기준을 넘어요', cls: 'warn-warning' },
+  DANGER: { label: '결석 위험', text: '1번만 더 결석해도 F 기준을 넘어요', cls: 'warn-danger' },
+  FAIL: { label: 'F 기준 초과', text: '결석이 수업의 1/4을 넘었어요', cls: 'warn-fail' },
+}
+
 export const STATUS_LABEL = { PRESENT: '출석', LATE: '지각', ABSENT: '결석' }
 export const SESSION_LABEL = { SCHEDULED: '예정', OPEN: '출석 중', CLOSED: '마감' }
 

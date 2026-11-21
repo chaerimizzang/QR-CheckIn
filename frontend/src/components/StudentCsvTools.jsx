@@ -44,7 +44,7 @@ export default function StudentCsvTools({ course, onDone, onError }) {
 
   return (
     <>
-      <div className="card">
+      {!course.finalizedAt && <div className="card">
         <div className="card-head">
           <h2 className="card-title">CSV로 한 번에 등록</h2>
           <button type="button" className="link-btn small" onClick={downloadTemplate}>양식 받기</button>
@@ -77,7 +77,7 @@ export default function StudentCsvTools({ course, onDone, onError }) {
             )}
           </div>
         )}
-      </div>
+      </div>}
 
       <div className="card export-row">
         <div>

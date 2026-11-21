@@ -56,9 +56,10 @@ export const put = (p, body) => api(p, { method: 'PUT', body })
 export const del = (p) => api(p, { method: 'DELETE' })
 
 /** 파일 올리기(multipart) — 예: CSV 수강생 등록 */
-export async function upload(path, file, field = 'file') {
+export async function upload(path, file, field = 'file', fields = {}) {
   const form = new FormData()
-  form.append(field, file)
+  if (file) form.append(field, file)
+  Object.entries(fields).forEach(([k, v]) => { if (v !== undefined && v !== null) form.append(k, v) })
   const headers = {}
   const token = session.token()
   if (token) headers.Authorization = `Bearer ${token}`

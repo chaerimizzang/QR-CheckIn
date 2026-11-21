@@ -57,6 +57,7 @@ public class StudentCsvService {
 
         // 관리자 권한 및 교육 소유 여부 확인
         Course course = courseService.getOwnedCourse(courseId, admin);
+        course.requireEditable(); // 출결이 확정된 교육은 읽기 전용
 
         List<StudentCsvResult.FailedStudent> failures = new ArrayList<>();
         Set<String> processedEmails = new HashSet<>();

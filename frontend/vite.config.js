@@ -7,12 +7,13 @@ export default defineConfig({
   build: {
     outDir: '../backend/src/main/resources/static',
     emptyOutDir: true,
-    // 파일 이름을 고정해서 다시 빌드해도 같은 파일을 덮어쓰게 한다(오래된 파일이 쌓이지 않도록)
+    // 파일 이름에 내용 해시를 붙인다 → 서버가 /assets 를 1년 캐시해도 새 버전은 이름이 달라 바로 받는다.
+    // emptyOutDir 로 빌드할 때마다 예전 파일은 지워진다.
     rolldownOptions: {
       output: {
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
   },

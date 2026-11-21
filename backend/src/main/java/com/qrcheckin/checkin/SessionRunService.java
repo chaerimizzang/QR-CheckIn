@@ -62,6 +62,7 @@ public class SessionRunService {
     @Transactional
     public SessionResponse open(Long sessionId, AuthUser admin) {
         ClassSession session = sessionService.getOwnedSession(sessionId, admin);
+        session.getCourse().requireEditable(); // 출결이 확정된 교육은 출석을 새로 열 수 없다
         if (session.getStatus() != SessionStatus.SCHEDULED) {
             throw new ApiException(ErrorCode.SESSION_ALREADY_STARTED);
         }

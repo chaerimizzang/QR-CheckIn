@@ -6,6 +6,7 @@ import com.qrcheckin.schedule.ScheduleDtos.ScheduleSlot;
 import com.qrcheckin.schedule.ScheduleDtos.WeeklyPlan;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.qrcheckin.user.User;
 
@@ -28,16 +29,35 @@ public final class CourseDtos {
             @NotBlank @Size(max = 100) String title,
             LocalDate startDate,
             LocalDate endDate,
-            @Size(max = 10, message = "수업 시간은 10개까지 넣을 수 있어요") List<@Valid WeeklyPlan> schedules) {
+            @Size(max = 10, message = "수업 시간은 10개까지 넣을 수 있어요") List<@Valid WeeklyPlan> schedules,
+            /** 학기(선택) — 비우면 시작일(없으면 오늘)로 정한다 */
+            Integer semesterYear,
+            SemesterTerm semesterTerm) {
     }
 
     /** schedules: 주간 시간표(월요일부터 정렬) */
     public record CourseResponse(Long id, String title, LocalDate startDate, LocalDate endDate,
-                                 String ownerName, long studentCount, List<ScheduleSlot> schedules) {
+                                 String ownerName, long studentCount, List<ScheduleSlot> schedules,
+                                 Integer semesterYear, SemesterTerm semesterTerm, String semesterKey,
+                                 String semesterLabel, LocalDateTime finalizedAt) {
         public static CourseResponse of(Course c, long studentCount, List<ScheduleSlot> schedules) {
+            Semester s = c.getSemester();
             return new CourseResponse(c.getId(), c.getTitle(), c.getStartDate(), c.getEndDate(),
-                    c.getOwner().getName(), studentCount, schedules);
+                    c.getOwner().getName(), studentCount, schedules,
+                    s == null ? null : s.year(), s == null ? null : s.term(),
+                    s == null ? null : s.key(), s == null ? "학기 미정" : s.label(), c.getFinalizedAt());
         }
+    }
+
+    /** 학기 선택 목록용 */
+    public record SemesterResponse(int year, SemesterTerm term, String key, String label) {
+        public static SemesterResponse of(Semester s) {
+            return new SemesterResponse(s.year(), s.term(), s.key(), s.label());
+        }
+    }
+
+    /** 출결 확정 전 확인: 막는 이유가 없으면 confirm 에 지워질 예정 회차 수 등을 알려 준다 */
+    public record FinalizeCheck(long openSessions, long pendingRequests, long unopenedSessions) {
     }
 
     /** B-04 수강생 추가 — 가입한 계정의 이메일 */

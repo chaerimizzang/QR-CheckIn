@@ -95,6 +95,7 @@ public class AttendanceService {
     @Transactional
     public RosterRow changeStatus(Long sessionId, Long userId, AttendanceStatus status, AuthUser admin) {
         ClassSession session = sessionService.getOwnedSession(sessionId, admin);
+        session.getCourse().requireEditable(); // 출결이 확정된 교육은 읽기 전용(일괄 처리·출석 인정 승인도 여기를 거친다)
         Enrollment enrollment = enrollmentRepository.findByCourseIdAndUserId(session.getCourse().getId(), userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "이 교육의 수강생이 아니에요"));
         LocalDateTime now = LocalDateTime.now(clock);

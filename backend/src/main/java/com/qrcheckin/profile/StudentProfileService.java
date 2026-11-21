@@ -90,6 +90,11 @@ public class StudentProfileService {
                 r.lateCount(),
                 r.absentCount(),
                 r.convertedAbsences(),
-                total == 0 ? null : r.attendanceRate());
+                total == 0 ? null : r.attendanceRate(),
+                r.remainingAbsences(),
+                r.warningLevel(),
+                course.getSemester() == null ? null : course.getSemester().key(),
+                course.getSemester() == null ? "학기 미정" : course.getSemester().label(),
+                course.isFinalized());
     }
 }

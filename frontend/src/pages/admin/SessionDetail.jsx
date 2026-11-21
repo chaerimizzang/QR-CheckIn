@@ -266,11 +266,6 @@ export default function SessionDetail() {
         <h2>출석 조건</h2>
         <div className="grid2">
           <label>
-            수업 일시
-            <input type="datetime-local" value={form.scheduledAt} disabled={!editable}
-              onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })} required />
-          </label>
-          <label>
             QR 출석 시간(분)
             <input type="number" min={1} max={60} value={form.checkinMinutes} disabled={!editable}
               onChange={(e) => setForm({ ...form, checkinMinutes: e.target.value })} required />
@@ -389,7 +384,7 @@ export default function SessionDetail() {
                         {['PRESENT', 'LATE', 'ABSENT'].map((st) => (
                           <button key={st} className={r.status === st ? `on ${st.toLowerCase()}` : ''}
                             onClick={() => r.status !== st && change(r.userId, st)}>
-                            {{ PRESENT: '출석', LATE: '지각', ABSENT: '결석' }[st]}
+                            {STATUS_LABEL[st]}
                           </button>
                         ))}
                       </div>

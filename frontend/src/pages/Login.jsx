@@ -37,7 +37,7 @@ export default function Login() {
         <div className="auth-logo">QR 출석</div>
         <p className="muted center">강의실에서 QR을 찍으면 출석이 기록돼요</p>
         {params.get('expired') && <div className="alert alert-info">로그인이 만료되었어요. 다시 로그인해 주세요.</div>}
-        {next?.startsWith('/check-in') && <div className="alert alert-info">로그인하면 바로 출석 처리를 이어서 할게요.</div>}
+        {next?.startsWith('/check-in') && <div className="alert alert-info">로그인하면 방금 찍은 QR로 바로 출석돼요</div>}
         <ErrorBox error={error} />
         <label>
           이메일

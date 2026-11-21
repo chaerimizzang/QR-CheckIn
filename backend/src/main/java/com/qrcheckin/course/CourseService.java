@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.qrcheckin.attendance.AttendanceRepository;
 import com.qrcheckin.auth.AuthUser;
 import com.qrcheckin.common.ApiException;
+import com.qrcheckin.common.DependentDataCleaner;
 import com.qrcheckin.common.ErrorCode;
 import com.qrcheckin.course.CourseDtos.CourseRequest;
 import com.qrcheckin.course.CourseDtos.CourseResponse;
@@ -20,6 +21,8 @@ import com.qrcheckin.user.UserRepository;
 @Service
 public class CourseService {
 
+    private final DependentDataCleaner cleaner;
+    private final java.time.Clock clock;
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ClassSessionRepository sessionRepository;
@@ -29,7 +32,10 @@ public class CourseService {
 
     public CourseService(CourseRepository courseRepository, EnrollmentRepository enrollmentRepository,
                          ClassSessionRepository sessionRepository, AttendanceRepository attendanceRepository,
-                         UserRepository userRepository, CourseScheduleRepository scheduleRepository) {
+                         UserRepository userRepository, CourseScheduleRepository scheduleRepository,
+                         DependentDataCleaner cleaner, java.time.Clock clock) {
+        this.cleaner = cleaner;
+        this.clock = clock;
         this.scheduleRepository = scheduleRepository;
         this.courseRepository = courseRepository;
         this.enrollmentRepository = enrollmentRepository;
@@ -64,6 +70,7 @@ public class CourseService {
         validateDates(req);
         Course course = new Course(userRepository.getReferenceById(user.id()), req.title().trim(),
                 req.startDate(), req.endDate());
+        course.setSemester(semesterOf(req, null));
         return toResponse(courseRepository.save(course));
     }
 
@@ -71,7 +78,9 @@ public class CourseService {
     public CourseResponse update(Long courseId, CourseRequest req, AuthUser user) {
         validateDates(req);
         Course course = getOwnedCourse(courseId, user);
+        course.requireEditable();
         course.update(req.title().trim(), req.startDate(), req.endDate());
+        course.setSemester(semesterOf(req, course.getSemester()));
         return toResponse(course);
     }
 
@@ -79,6 +88,8 @@ public class CourseService {
     @Transactional
     public void delete(Long courseId, AuthUser user) {
         Course course = getOwnedCourse(courseId, user);
+        course.requireEditable(); // 출결이 확정된 교육은 기록 보존을 위해 지울 수 없다
+        cleaner.forCourse(courseId); // 수정 이력·출석 인정 신청
         attendanceRepository.deleteBySessionCourseId(courseId);
         sessionRepository.deleteByCourseId(courseId);
         enrollmentRepository.deleteByCourseId(courseId);
@@ -94,6 +105,20 @@ public class CourseService {
             throw new ApiException(ErrorCode.FORBIDDEN);
         }
         return course;
+    }
+
+    /** 학기: 요청에 있으면 그것, 없으면 기존 값, 그것도 없으면 시작일(없으면 오늘) 기준 */
+    private Semester semesterOf(CourseRequest req, Semester current) {
+        if (req.semesterYear() != null && req.semesterTerm() != null) {
+            if (req.semesterYear() < 2000 || req.semesterYear() > 2100) {
+                throw new ApiException(ErrorCode.VALIDATION_FAILED, "학기 연도를 확인해 주세요");
+            }
+            return new Semester(req.semesterYear(), req.semesterTerm());
+        }
+        if (current != null) {
+            return current;
+        }
+        return Semester.of(req.startDate() != null ? req.startDate() : java.time.LocalDate.now(clock));
     }
 
     private Course findCourse(Long courseId) {

@@ -37,7 +37,17 @@ public enum ErrorCode {
     LOW_ACCURACY(HttpStatus.UNPROCESSABLE_ENTITY, "위치 정확도가 낮아요"),
     OUT_OF_RANGE(HttpStatus.UNPROCESSABLE_ENTITY, "출석 장소에서 떨어져 있어요"),
     ALREADY_CHECKED(HttpStatus.CONFLICT, "이미 출석했어요"),
-    DEVICE_ALREADY_USED(HttpStatus.CONFLICT, "이 휴대폰으로 이미 다른 학생이 출석했어요");
+    DEVICE_ALREADY_USED(HttpStatus.CONFLICT, "이 휴대폰으로 이미 다른 학생이 출석했어요"),
+
+    // 출석 인정 신청
+    REQUEST_DUPLICATED(HttpStatus.CONFLICT, "이 회차에 처리 중인 신청이 이미 있어요"),
+    REQUEST_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "이 회차에는 이 신청을 할 수 없어요"),
+    REQUEST_ALREADY_DONE(HttpStatus.CONFLICT, "이미 처리된 신청이에요"),
+    FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일은 5MB 이하만 올릴 수 있어요"),
+
+    // 학기 · 출결 확정
+    COURSE_FINALIZED(HttpStatus.CONFLICT, "출결이 확정된 교육이라 바꿀 수 없어요. 바꾸려면 [확정 취소]를 먼저 해 주세요"),
+    FINALIZE_BLOCKED(HttpStatus.CONFLICT, "아직 출결을 확정할 수 없어요");
 
     private final HttpStatus status;
     private final String defaultMessage;

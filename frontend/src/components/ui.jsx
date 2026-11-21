@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { get } from '../api'
 import { useAuth } from '../auth'
 import { SESSION_LABEL, STATUS_LABEL } from '../util'
 import Icon from './Icon'
 
 
-/** 왼쪽 메뉴 항목 — 홈(관리자: 내 교육·교육 만들기 / 수강생: 내 교육·QR 스캔)·프로필·시간표·비밀번호 변경 */
+/** 왼쪽 메뉴 항목 — 홈(관리자: 내 교육·교육 만들기 / 수강생: 내 교육·QR 스캔)·프로필·시간표·출석 인정 */
 const COMMON = [
   { to: '/profile', label: '프로필', icon: 'user', match: (p) => p === '/profile' },
   { to: '/timetable', label: '시간표', icon: 'calendar', match: (p) => p === '/timetable' },
+  { to: '/requests', label: '출석 인정', icon: 'clipboard-check', match: (p) => p === '/requests', count: true },
 ]
 const MENU = {
   ADMIN: [{ to: '/admin', label: '홈', icon: 'home', match: (p) => p === '/admin' }, ...COMMON],
-  STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' }, ...COMMON],
+  // 학생: 홈 · 프로필 · 시간표 · 출결 현황 · 출석 인정
+  STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' }, ...COMMON.slice(0, 2),
+    { to: '/attendance', label: '출결 현황', icon: 'chart-column', match: (p) => p === '/attendance' }, ...COMMON.slice(2)],
 }
 
 function SideMenu({ open, onClose }) {
@@ -20,6 +24,13 @@ function SideMenu({ open, onClose }) {
   const navigate = useNavigate()
   const { pathname, search } = useLocation()
   const query = new URLSearchParams(search)
+  const [pending, setPending] = useState(0)
+
+  // 교수: 메뉴를 열 때 처리할 출석 인정 신청 수를 받아 온다
+  useEffect(() => {
+    if (!open || user?.role !== 'ADMIN') return
+    get('/requests/pending-count').then((r) => setPending(r.pending)).catch(() => {})
+  }, [open, user?.role])
 
   // Esc 로 닫기, 열려 있는 동안 뒤 화면 스크롤 막기
   useEffect(() => {
@@ -33,6 +44,7 @@ function SideMenu({ open, onClose }) {
 
   if (!user) return null
   const items = MENU[user.role] ?? []
+  const showCount = (it) => it.count && user.role === 'ADMIN' && pending > 0
   return (
     <>
       <div className={`drawer-backdrop${open ? ' open' : ''}`} onClick={onClose} aria-hidden="true" />
@@ -55,6 +67,7 @@ function SideMenu({ open, onClose }) {
                 className={`drawer-item${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
                 <Icon name={active ? `${it.icon}-active` : it.icon} size={20} />
                 {it.label}
+                {showCount(it) && <span className="menu-count" aria-label={`처리할 신청 ${pending}건`}>{pending}</span>}
               </Link>
             )
           })}

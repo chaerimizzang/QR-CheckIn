@@ -12,6 +12,16 @@ window.addEventListener('beforeinstallprompt', (e) => {
   window.dispatchEvent(new Event('qr-install-ready'))
 })
 
+// 새 버전을 배포한 직후, 예전 화면이 지워진 파일(이름에 해시)을 불러오려다 실패하면 한 번 새로고침한다
+window.addEventListener('vite:preloadError', (e) => {
+  e.preventDefault()
+  if (!sessionStorage.getItem('qr-reloaded')) {
+    sessionStorage.setItem('qr-reloaded', '1')
+    window.location.reload()
+  }
+})
+window.addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('qr-reloaded'), 10000))
+
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('서비스 워커 등록 실패', e))

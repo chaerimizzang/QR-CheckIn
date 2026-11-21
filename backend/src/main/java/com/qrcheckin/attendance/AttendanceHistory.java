@@ -29,11 +29,11 @@ public class AttendanceHistory {
     private User modifiedBy;
 
     @Enumerated(EnumType.STRING)   //Previous status
-    @Column(name = "old_status", length = 10)
+    @Column(name = "old_status", length = 20, columnDefinition = "varchar(20)")
     private AttendanceStatus oldStatus;
 
     @Enumerated(EnumType.STRING) //New status
-    @Column(name = "new_status", nullable = false, length = 10)
+    @Column(name = "new_status", nullable = false, length = 20, columnDefinition = "varchar(20)")
     private AttendanceStatus newStatus;
 
     @Column(name = "modified_at", nullable = false) // Date and time of modification
