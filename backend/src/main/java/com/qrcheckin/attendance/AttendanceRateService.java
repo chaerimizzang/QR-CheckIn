@@ -140,7 +140,7 @@ public class AttendanceRateService {
         }
 
         // 지각 3회 = 결석 1회
-        long convertedAbsences = absent + (late / 3);
+        long convertedAbsences = AbsenceRule.convertedAbsences(absent, late);
 
         // F 기준(결석이 전체 수업의 1/4 초과) 경고
         AbsenceRule.Status warning = AbsenceRule.of(plannedSessions, convertedAbsences, failRatio);
