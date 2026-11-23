@@ -47,7 +47,11 @@ public enum ErrorCode {
 
     // 학기 · 출결 확정
     COURSE_FINALIZED(HttpStatus.CONFLICT, "출결이 확정된 교육이라 바꿀 수 없어요. 바꾸려면 [확정 취소]를 먼저 해 주세요"),
-    FINALIZE_BLOCKED(HttpStatus.CONFLICT, "아직 출결을 확정할 수 없어요");
+    FINALIZE_BLOCKED(HttpStatus.CONFLICT, "아직 출결을 확정할 수 없어요"),
+
+    // AI 출결 도우미
+    ASSISTANT_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "질문이 너무 많아요. 잠시 후 다시 물어봐 주세요"),
+    ASSISTANT_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "지금은 AI 도우미가 답하기 어려워요. 잠시 후 다시 시도하거나 출결 현황 화면을 이용해 주세요");
 
     private final HttpStatus status;
     private final String defaultMessage;

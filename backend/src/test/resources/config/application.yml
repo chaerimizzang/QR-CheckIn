@@ -1,0 +1,7 @@
+# 테스트 전용 추가 설정(classpath:/config/ 라서 main 의 application.yml 위에 덮어쓴다 — main 설정은 그대로 읽힘)
+# 노트북 .env 에 진짜 LLM 키가 있어도 테스트는 Gemini 를 부르지 않는다(무료 한도 보호).
+# AI 도우미 테스트는 가짜 LLM(FakeLlm)을 쓴다.
+app:
+  assistant:
+    api-key: ""
+    startup-check: false
