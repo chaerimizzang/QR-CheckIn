@@ -10,6 +10,21 @@ import { DAY_LABEL, TERMS, fmtSchedules, monthEnd, monthStart, semesterKey, seme
 import SemesterPicker, { useSemester } from '../../components/SemesterPicker'
 import WeeklyPlanFields from '../../components/WeeklyPlanFields'
 
+/** 학기 기본 기간: 1학기 3월~6월, 2학기 9월~12월. 개강일(3/2·9/1, 주말이면 다음 월요일)부터 14주 */
+const WEEKS = 14
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+function openingDay(year, term) {
+  const d = new Date(year, term === 'SPRING' ? 2 : 8, term === 'SPRING' ? 2 : 1)
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1)
+  return ymd(d)
+}
+function addDays(day, n) { const d = new Date(`${day}T00:00:00`); d.setDate(d.getDate() + n); return ymd(d) }
+/** 지금 만들 교육의 기본 학기: 1~6월 → 그해 1학기, 7~12월 → 그해 2학기 */
+function defaultTerm(now = new Date()) {
+  return { year: now.getFullYear(), term: now.getMonth() + 1 <= 6 ? 'SPRING' : 'FALL' }
+}
+const fmtMd = (day) => { const d = new Date(`${day}T00:00:00`); return `${d.getMonth() + 1}월 ${d.getDate()}일(${'일월화수목금토'[d.getDay()]})` }
+
 const DAY_KEYS = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
 const hm = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
@@ -33,7 +48,9 @@ export default function Courses() {
   const [period, setPeriod] = useState({ startMonth: '', endMonth: '' })
   const [plans, setPlans] = useState([])
   const [pending, setPending] = useState(false)
-  const [semesterPick, setSemesterPick] = useState('') // '' = 시작 월 기준 자동
+  const [semesterPick, setSemesterPick] = useState(semesterKey(defaultTerm())) // 1학기·2학기
+  const [opening, setOpening] = useState(openingDay(defaultTerm().year, defaultTerm().term)) // 개강일(바꿀 수 있음)
+  const [customPeriod, setCustomPeriod] = useState(false) // 여름·겨울학기 등은 기간을 직접
   const sem = useSemester()
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
@@ -48,6 +65,13 @@ export default function Courses() {
   const autoSemester = semesterOf(period.startMonth ? new Date(`${period.startMonth}-01T00:00:00`) : new Date())
   const thisYear = new Date().getFullYear()
   const semesterChoices = [thisYear - 1, thisYear, thisYear + 1].flatMap((y) => TERMS.map((t) => ({ year: y, term: t.term })))
+  const regularChoices = semesterChoices.filter((s) => s.term === 'SPRING' || s.term === 'FALL')
+  const lastDay = addDays(opening, WEEKS * 7 - 1) // 14주차 마지막 날
+  function pickSemester(key) {
+    setSemesterPick(key)
+    const [y, t] = key.split('-')
+    if (t === 'SPRING' || t === 'FALL') setOpening(openingDay(Number(y), t))
+  }
   useEffect(() => { load() }, [])
   useEffect(() => { get('/requests/pending-count').then((r) => setPendingReq(r.pending)).catch(() => {}) }, [])
   // 지금 학기 교육마다 회차(오늘 수업)와 수강생 출석률(평균·결석 주의)을 받아 온다
@@ -91,18 +115,21 @@ export default function Courses() {
     e.preventDefault()
     setError(null)
     const problem = pending ? '고른 요일·시간을 [추가하기]로 넣어 주세요'
-      : plans.length && (!period.startMonth || !period.endMonth) ? '수업 기간(몇 월부터 몇 월까지)을 넣어 주세요'
-      : period.startMonth && period.endMonth && period.endMonth < period.startMonth ? '끝 월이 시작 월보다 빨라요'
+      : !customPeriod && !opening ? '개강일을 넣어 주세요'
+      : customPeriod && plans.length && (!period.startMonth || !period.endMonth) ? '수업 기간(몇 월부터 몇 월까지)을 넣어 주세요'
+      : customPeriod && period.startMonth && period.endMonth && period.endMonth < period.startMonth ? '끝 월이 시작 월보다 빨라요'
       : null
     if (problem) { setError({ message: problem }); return }
-    const chosen = semesterPick ? { year: Number(semesterPick.split('-')[0]), term: semesterPick.split('-')[1] } : autoSemester
+    const chosen = customPeriod && !semesterPick ? autoSemester
+      : { year: Number(semesterPick.split('-')[0]), term: semesterPick.split('-')[1] }
     setBusy(true)
     try {
       const c = await post('/courses', {
         title,
         room,
-        startDate: monthStart(period.startMonth),
-        endDate: monthEnd(period.endMonth),
+        // 학기를 고르면 개강일부터 14주, 직접 정하면 고른 월의 1일~말일
+        startDate: customPeriod ? monthStart(period.startMonth) : opening,
+        endDate: customPeriod ? monthEnd(period.endMonth) : lastDay,
         // 수업 시간을 넣었으면 시간표 저장 + 오늘부터 끝 월까지 회차 자동 생성
         schedules: plans.length ? plans : null,
         semesterYear: chosen.year,
@@ -162,18 +189,40 @@ export default function Courses() {
         <form className="card" onSubmit={create}>
           <label>교육 이름<input placeholder="예: 데이터베이스 실습" value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus /></label>
           <label>강의실 <span className="muted small">(선택)</span><input placeholder="예: 공학관 302호" value={room} onChange={(e) => setRoom(e.target.value)} maxLength={50} /></label>
-          <div className="grid2">
-            <label>시작 월<input type="month" value={period.startMonth} onChange={(e) => setPeriod({ ...period, startMonth: e.target.value })} /></label>
-            <label>끝 월<input type="month" value={period.endMonth} min={period.startMonth || undefined} onChange={(e) => setPeriod({ ...period, endMonth: e.target.value })} /></label>
-          </div>
-          <label>학기
-            <select className="input" value={semesterPick} onChange={(e) => setSemesterPick(e.target.value)}>
-              <option value="">{semesterLabel(autoSemester)} (시작 월 기준 자동)</option>
-              {semesterChoices.map((s) => <option key={semesterKey(s)} value={semesterKey(s)}>{semesterLabel(s)}</option>)}
-            </select>
-          </label>
+          {!customPeriod ? (
+            <>
+              <div className="grid2">
+                <label>학기
+                  <select className="input" value={semesterPick} onChange={(e) => pickSemester(e.target.value)}>
+                    {regularChoices.map((s) => <option key={semesterKey(s)} value={semesterKey(s)}>{semesterLabel(s)}</option>)}
+                  </select>
+                </label>
+                <label>개강일<input type="date" value={opening} onChange={(e) => setOpening(e.target.value)} required /></label>
+              </div>
+              <p className="muted small" style={{ marginTop: -4 }}>
+                {opening && `${fmtMd(opening)} ~ ${fmtMd(lastDay)} · ${WEEKS}주`}
+                {' · '}<button type="button" className="link-btn small" onClick={() => setCustomPeriod(true)}>기간 직접 정하기(여름·겨울학기 등)</button>
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="grid2">
+                <label>시작 월<input type="month" value={period.startMonth} onChange={(e) => setPeriod({ ...period, startMonth: e.target.value })} /></label>
+                <label>끝 월<input type="month" value={period.endMonth} min={period.startMonth || undefined} onChange={(e) => setPeriod({ ...period, endMonth: e.target.value })} /></label>
+              </div>
+              <label>학기
+                <select className="input" value={semesterPick} onChange={(e) => setSemesterPick(e.target.value)}>
+                  <option value="">{semesterLabel(autoSemester)} (시작 월 기준 자동)</option>
+                  {semesterChoices.map((s) => <option key={semesterKey(s)} value={semesterKey(s)}>{semesterLabel(s)}</option>)}
+                </select>
+              </label>
+              <p className="muted small" style={{ marginTop: -4 }}>
+                <button type="button" className="link-btn small" onClick={() => { setCustomPeriod(false); pickSemester(semesterKey(defaultTerm())) }}>학기로 정하기(개강일부터 {WEEKS}주)</button>
+              </p>
+            </>
+          )}
           <WeeklyPlanFields plans={plans} onChange={setPlans} onPendingChange={setPending} />
-          <p className="muted small">수업 시간을 넣으면 오늘부터 끝 월까지 매주 회차가 자동으로 만들어져요. 비워 두면 회차는 직접 추가해요.</p>
+          <p className="muted small">수업 시간을 넣으면 {customPeriod ? '오늘부터 끝 월까지' : `오늘부터 ${WEEKS}주차까지`} 매주 회차가 자동으로 만들어져요. 비워 두면 회차는 직접 추가해요.</p>
           <div className="btn-row">
             <button className="btn btn-primary" disabled={busy}>{busy ? '만드는 중…' : '만들기'}</button>
             <button type="button" className="btn" onClick={() => setShowForm(false)}>취소</button>
