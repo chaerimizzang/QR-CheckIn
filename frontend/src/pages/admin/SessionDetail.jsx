@@ -13,6 +13,8 @@ export default function SessionDetail() {
   const [roster, setRoster] = useState(null)
   const [form, setForm] = useState(null)
   const [history, setHistory] = useState({})
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
   const [historyOpen, setHistoryOpen] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedIds, setSelectedIds] = useState([])
@@ -121,6 +123,28 @@ export default function SessionDetail() {
     try {
       await post(`/sessions/${sessionId}/close`)
       await Promise.all([loadSession(), loadRoster()])
+    } catch (err) { setError(err) }
+  }
+
+  /** 휴강: 사유는 선택. 앞으로의 수업이면 서버가 수강생에게 알림을 보낸다 */
+  async function cancelClass() {
+    setError(null)
+    try {
+      await post(`/sessions/${sessionId}/cancel`, { reason: cancelReason.trim() || null })
+      setCancelOpen(false)
+      setCancelReason('')
+      await loadSession()
+      setNotice('휴강으로 바꿨어요')
+    } catch (err) { setError(err) }
+  }
+
+  async function uncancelClass() {
+    if (!window.confirm('휴강을 취소하고 다시 예정 회차로 돌릴까요?')) return
+    setError(null)
+    try {
+      await post(`/sessions/${sessionId}/uncancel`)
+      await Promise.all([loadSession(), loadRoster()])
+      setNotice('휴강을 취소했어요')
     } catch (err) { setError(err) }
   }
 
@@ -236,9 +260,36 @@ export default function SessionDetail() {
                 {hasLocation ? `누르면 QR이 표시되고 ${s.checkinMinutes}분 뒤 자동 마감돼요` : '먼저 아래에서 출석 장소를 지정해 주세요'}
               </div>
             </div>
-            <button className="btn btn-primary btn-lg" onClick={open} disabled={!hasLocation || changed}>
-              출석 시작
-            </button>
+            <div className="btn-col action-buttons">
+              <button className="btn btn-primary btn-lg" onClick={open} disabled={!hasLocation || changed}>
+                출석 시작
+              </button>
+              {!cancelOpen && (
+                <button type="button" className="link-btn small" onClick={() => setCancelOpen(true)}>휴강으로 바꾸기</button>
+              )}
+            </div>
+            {cancelOpen && (
+              <div className="cancel-form">
+                <input value={cancelReason} maxLength={200} placeholder="휴강 사유(선택) 예: 학회 참석"
+                  onChange={(e) => setCancelReason(e.target.value)} aria-label="휴강 사유" />
+                <div className="btn-row">
+                  <button type="button" className="btn btn-sm btn-primary" onClick={cancelClass}>휴강</button>
+                  <button type="button" className="btn btn-sm" onClick={() => { setCancelOpen(false); setCancelReason('') }}>닫기</button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        {s.status === 'CANCELED' && (
+          <>
+            <div>
+              <div className="item-title">휴강</div>
+              <div className="muted small">{s.cancelReason ?? '사유 없음'}</div>
+            </div>
+            <div className="btn-row">
+              <button className="btn" onClick={uncancelClass}>휴강 취소</button>
+              <button type="button" className="link-btn danger" onClick={remove}>회차 삭제</button>
+            </div>
           </>
         )}
         {s.status === 'OPEN' && (
@@ -310,8 +361,8 @@ export default function SessionDetail() {
         )}
       </form>
 
-      {/* A-06 출결 현황·수정 */}
-      <div className="card">
+      {/* A-06 출결 현황·수정 — 휴강 회차는 출결을 기록하지 않는다 */}
+      {s.status !== 'CANCELED' && <div className="card">
         <div className="card-head">
           <h2>출결 현황</h2>
           <button className="btn btn-sm" onClick={() => loadRoster().catch(setError)}>새로고침</button>
@@ -412,7 +463,7 @@ export default function SessionDetail() {
             )}
           </>
         )}
-      </div>
+      </div>}
     </Layout>
   )
 }

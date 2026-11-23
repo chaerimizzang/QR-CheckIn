@@ -201,7 +201,8 @@ class AssistantEvidence {
         for (UpcomingSession s : r.sessions()) {
             sessionsInRange.add(s.sessionId());
             String time = s.startAt().format(HM) + (s.endAt() == null ? "" : "~" + s.endAt().format(HM));
-            fact(dayLabel(s.startAt().toLocalDate()) + " " + time, s.courseTitle());
+            fact(dayLabel(s.startAt().toLocalDate()) + " " + time, s.courseTitle()
+                    + (s.canceled() ? " · 휴강" + (s.cancelReason() == null ? "" : "(" + s.cancelReason() + ")") : ""));
         }
         if (r.sessions().isEmpty()) {
             fact(dayLabel(r.from()) + " ~ " + dayLabel(r.to()), "수업 없음");

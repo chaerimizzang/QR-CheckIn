@@ -67,6 +67,13 @@ public class ClassSession {
     @Column(nullable = false, length = 10)
     private SessionStatus status;
 
+    /** 휴강 사유(선택)와 휴강으로 바꾼 시각 */
+    @Column(name = "cancel_reason", length = 200)
+    private String cancelReason;
+
+    @Column(name = "canceled_at")
+    private LocalDateTime canceledAt;
+
     protected ClassSession() {
     }
 
@@ -114,6 +121,30 @@ public class ClassSession {
         this.status = SessionStatus.CLOSED;
     }
 
+    /** 휴강: SCHEDULED 회차만(서비스에서 확인) */
+    public void cancel(String reason, LocalDateTime now) {
+        this.status = SessionStatus.CANCELED;
+        this.cancelReason = reason;
+        this.canceledAt = now;
+    }
+
+    /** 휴강 취소: 다시 예정 회차로. 수업 전 알림도 다시 보낼 수 있게 한다 */
+    public void uncancel() {
+        this.status = SessionStatus.SCHEDULED;
+        this.cancelReason = null;
+        this.canceledAt = null;
+        this.reminderSentAt = null;
+    }
+
+    public boolean isCanceled() {
+        return status == SessionStatus.CANCELED;
+    }
+
+    /** 전체 회차(F 기준 분모)에 들어가는 회차인지 — 휴강은 빠진다 */
+    public boolean countsAsPlanned() {
+        return status != SessionStatus.CANCELED;
+    }
+
     public boolean hasLocation() {
         return latitude != null && longitude != null;
     }
@@ -128,6 +159,8 @@ public class ClassSession {
     public int getCheckinMinutes() { return checkinMinutes; }
     public LocalDateTime getOpenedAt() { return openedAt; }
     public LocalDateTime getClosedAt() { return closedAt; }
+    public String getCancelReason() { return cancelReason; }
+    public LocalDateTime getCanceledAt() { return canceledAt; }
     public String getQrSalt() { return qrSalt; }
     public SessionStatus getStatus() { return status; }
 }

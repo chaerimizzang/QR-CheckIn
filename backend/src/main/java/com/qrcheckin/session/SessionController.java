@@ -28,9 +28,11 @@ import jakarta.validation.Valid;
 public class SessionController {
 
     private final SessionService sessionService;
+    private final SessionCancelService cancelService;
 
-    public SessionController(SessionService sessionService) {
+    public SessionController(SessionService sessionService, SessionCancelService cancelService) {
         this.sessionService = sessionService;
+        this.cancelService = cancelService;
     }
 
     @GetMapping("/courses/{courseId}/sessions")
@@ -54,6 +56,20 @@ public class SessionController {
     public SessionResponse update(@PathVariable Long sessionId, @Valid @RequestBody SessionRequest req,
                                   @AuthenticationPrincipal AuthUser user) {
         return sessionService.update(sessionId, req, user);
+    }
+
+    /** 휴강: 출석을 시작하기 전 회차만. 사유는 선택(본문 없이 보내도 된다) */
+    @PostMapping("/sessions/{sessionId}/cancel")
+    public SessionResponse cancel(@PathVariable Long sessionId,
+                                  @Valid @RequestBody(required = false) SessionDtos.CancelRequest req,
+                                  @AuthenticationPrincipal AuthUser user) {
+        return cancelService.cancel(sessionId, req == null ? null : req.reason(), user);
+    }
+
+    /** 휴강 취소: 다시 예정 회차로 */
+    @PostMapping("/sessions/{sessionId}/uncancel")
+    public SessionResponse uncancel(@PathVariable Long sessionId, @AuthenticationPrincipal AuthUser user) {
+        return cancelService.uncancel(sessionId, user);
     }
 
     @DeleteMapping("/sessions/{sessionId}")

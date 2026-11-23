@@ -75,7 +75,9 @@ public class SessionService {
     public void delete(Long sessionId, AuthUser admin) {
         ClassSession session = getOwnedSession(sessionId, admin);
         session.getCourse().requireEditable();
-        requireScheduled(session);
+        if (!session.isCanceled()) { // 휴강한 회차도 지울 수 있다
+            requireScheduled(session);
+        }
         cleaner.forSession(sessionId); // 출석 인정 신청·미리 인정된 출결 기록
         sessionRepository.delete(session);
     }
@@ -90,6 +92,9 @@ public class SessionService {
     }
 
     private static void requireScheduled(ClassSession session) {
+        if (session.isCanceled()) {
+            throw new ApiException(ErrorCode.SESSION_CANCELED, "휴강한 회차예요. 휴강을 취소한 뒤 수정해 주세요");
+        }
         if (session.getStatus() != SessionStatus.SCHEDULED) {
             throw new ApiException(ErrorCode.SESSION_NOT_EDITABLE);
         }

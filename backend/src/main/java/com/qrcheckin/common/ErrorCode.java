@@ -27,6 +27,7 @@ public enum ErrorCode {
     SESSION_NOT_EDITABLE(HttpStatus.CONFLICT, "출석을 시작한 회차는 수정·삭제할 수 없어요"),
     LOCATION_REQUIRED(HttpStatus.BAD_REQUEST, "출석 장소를 먼저 지정해 주세요"),
     SESSION_ALREADY_STARTED(HttpStatus.CONFLICT, "이미 출석을 시작한 회차예요"),
+    SESSION_CANCELED(HttpStatus.CONFLICT, "휴강한 회차예요"),
 
     // 출석 인증 (B-07, B-09) — 계획서 4.4
     QR_INVALID(HttpStatus.UNPROCESSABLE_ENTITY, "올바른 출석 QR이 아니에요"),

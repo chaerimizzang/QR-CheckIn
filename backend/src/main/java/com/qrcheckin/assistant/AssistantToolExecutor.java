@@ -36,7 +36,7 @@ class AssistantToolExecutor {
                   "allSemesters":{"type":"boolean"}}}}},
               {"type":"function","function":{
                 "name":"getMyUpcomingSessions",
-                "description":"from~to(포함, 최대 31일) 사이 내 수업 회차와 시작·종료 시각. 예비군·병원처럼 특정 날짜에 겹치는 수업을 찾을 때 쓴다.",
+                "description":"from~to(포함, 최대 31일) 사이 내 수업 회차와 시작·종료 시각, 휴강 여부(canceled). 예비군·병원처럼 특정 날짜에 겹치는 수업을 찾거나 '그날 수업 있어?'를 확인할 때 쓴다.",
                 "parameters":{"type":"object","properties":{
                   "from":{"type":"string","description":"YYYY-MM-DD"},
                   "to":{"type":"string","description":"YYYY-MM-DD"}},

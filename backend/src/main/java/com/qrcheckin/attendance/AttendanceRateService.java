@@ -51,7 +51,7 @@ public class AttendanceRateService {
 
         // 마감된 회차만 출석률 계산에 포함(전체 회차 수는 F 기준 계산용)
         List<ClassSession> allSessions = sessionRepository.findByCourseIdOrderBySessionNoAsc(courseId);
-        int planned = allSessions.size();
+        int planned = plannedCount(allSessions); // 휴강은 전체 회차에서 뺀다
         List<ClassSession> closedSessions = allSessions
                 .stream()
                 .filter(s -> s.getStatus() == SessionStatus.CLOSED)
@@ -82,7 +82,7 @@ public class AttendanceRateService {
         List<ClassSession> all = sessionRepository.findByCourseIdOrderBySessionNoAsc(courseId);
         List<ClassSession> closed = all.stream().filter(s -> s.getStatus() == SessionStatus.CLOSED).toList();
         return enrollmentRepository.findByCourseId(courseId).stream()
-                .map(e -> rateOf(e.getUser(), courseId, closed, all.size()))
+                .map(e -> rateOf(e.getUser(), courseId, closed, plannedCount(all)))
                 .toList();
     }
 
@@ -90,7 +90,12 @@ public class AttendanceRateService {
     @Transactional(readOnly = true)
     public StudentRate rateOfStudent(Long courseId, User student) {
         return rateOf(student, courseId, closedSessions(courseId),
-                sessionRepository.findByCourseIdOrderBySessionNoAsc(courseId).size());
+                plannedCount(sessionRepository.findByCourseIdOrderBySessionNoAsc(courseId)));
+    }
+
+    /** F 기준의 전체 회차 수: 예정·진행·마감 회차(휴강 제외) */
+    public static int plannedCount(List<ClassSession> sessions) {
+        return (int) sessions.stream().filter(ClassSession::countsAsPlanned).count();
     }
 
     /** 마감된 회차만 출석률 계산에 포함 */

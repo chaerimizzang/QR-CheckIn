@@ -37,7 +37,9 @@ public final class AttendanceDtos {
 
     /** B-10 본인 출결: 회차마다 한 줄. 출결이 아직 정해지지 않은 회차는 status 가 null */
     public record MyRow(Long sessionId, int sessionNo, LocalDateTime scheduledAt, SessionStatus sessionStatus,
-                        AttendanceStatus status, LocalDateTime checkedAt) {
+                        AttendanceStatus status, LocalDateTime checkedAt,
+                        /** 휴강 사유(휴강이 아니면 null) */
+                        String cancelReason) {
     }
 
     public record MyAttendanceResponse(Long courseId, String courseTitle, List<MyRow> sessions) {

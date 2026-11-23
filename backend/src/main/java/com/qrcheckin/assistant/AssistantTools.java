@@ -169,7 +169,7 @@ public class AssistantTools {
                     continue;
                 }
                 found.add(new UpcomingSession(c.getId(), c.getTitle(), s.getId(), s.getSessionNo(), at,
-                        endOf(at, slots), s.getStatus()));
+                        endOf(at, slots), s.getStatus(), s.isCanceled(), s.getCancelReason()));
             }
         }
         found.sort(Comparator.comparing(UpcomingSession::startAt).thenComparing(UpcomingSession::courseTitle));
@@ -200,7 +200,7 @@ public class AssistantTools {
 
         AttendanceSimulator.Result result;
         try {
-            result = AttendanceSimulator.simulate(all.size(), remaining, rate.absentCount(), rate.lateCount(),
+            result = AttendanceSimulator.simulate(AttendanceRateService.plannedCount(all), remaining, rate.absentCount(), rate.lateCount(),
                     addLate, addAbsent, failRatio);
         } catch (IllegalArgumentException e) {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, e.getMessage());
@@ -214,8 +214,8 @@ public class AssistantTools {
      * (진행하지 않은 회차 판단은 출석 인정 신청과 같다)
      */
     static boolean willBeHeld(ClassSession s, LocalDateTime now) {
-        if (s.getStatus() == SessionStatus.CLOSED) {
-            return false;
+        if (s.getStatus() == SessionStatus.CLOSED || s.isCanceled()) {
+            return false; // 끝났거나 휴강
         }
         boolean neverHeld = s.getStatus() == SessionStatus.SCHEDULED
                 && s.getScheduledAt() != null && s.getScheduledAt().isBefore(now);

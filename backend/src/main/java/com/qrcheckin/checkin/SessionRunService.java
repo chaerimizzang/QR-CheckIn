@@ -63,6 +63,9 @@ public class SessionRunService {
     public SessionResponse open(Long sessionId, AuthUser admin) {
         ClassSession session = sessionService.getOwnedSession(sessionId, admin);
         session.getCourse().requireEditable(); // 출결이 확정된 교육은 출석을 새로 열 수 없다
+        if (session.isCanceled()) {
+            throw new ApiException(ErrorCode.SESSION_CANCELED, "휴강한 회차예요. 휴강을 취소한 뒤 출석을 시작해 주세요");
+        }
         if (session.getStatus() != SessionStatus.SCHEDULED) {
             throw new ApiException(ErrorCode.SESSION_ALREADY_STARTED);
         }
@@ -78,6 +81,9 @@ public class SessionRunService {
     @Transactional
     public SessionResponse close(Long sessionId, AuthUser admin) {
         ClassSession session = sessionService.getOwnedSession(sessionId, admin);
+        if (session.isCanceled()) {
+            throw new ApiException(ErrorCode.SESSION_CANCELED);
+        }
         if (session.getStatus() == SessionStatus.SCHEDULED) {
             throw new ApiException(ErrorCode.SESSION_NOT_OPEN, "아직 출석을 시작하지 않은 회차예요");
         }
@@ -91,6 +97,9 @@ public class SessionRunService {
     public QrResponse currentQr(Long sessionId, AuthUser admin) {
         ClassSession session = sessionService.getOwnedSession(sessionId, admin);
         LocalDateTime now = LocalDateTime.now(clock);
+        if (session.isCanceled()) {
+            throw new ApiException(ErrorCode.SESSION_CANCELED);
+        }
         if (session.getStatus() == SessionStatus.SCHEDULED) {
             throw new ApiException(ErrorCode.SESSION_NOT_OPEN, "아직 출석을 시작하지 않은 회차예요");
         }
