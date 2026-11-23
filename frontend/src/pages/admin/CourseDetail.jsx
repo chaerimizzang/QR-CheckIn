@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post, put } from '../../api'
-import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
+import { Empty, ErrorBox, HeroTiles, Layout, Loading, SessionBadge } from '../../components/ui'
 import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal, WARNING } from '../../util'
 import StudentCsvTools from '../../components/StudentCsvTools'
 import AttendanceStatistics from './AttendanceStatistics'
@@ -105,7 +105,15 @@ export default function CourseDetail() {
   if (!course) return <Layout back="/admin"><ErrorBox error={error} /><Loading /></Layout>
 
   return (
-    <Layout back="/admin" title={course.title}>
+    <Layout back="/admin" title={course.title}
+      subtitle={`${fmtSchedules(course.schedules) || '시간표 미정'} · ${course.room || '강의실 미정'} · 수강생 ${course.studentCount}명`}
+      hero={sessions && (
+        <HeroTiles items={[
+          { label: '전체 회차', value: `${sessions.filter((x) => x.status !== 'CANCELED').length}회` },
+          { label: '마감', value: `${sessions.filter((x) => x.status === 'CLOSED').length}회` },
+          { label: '휴강', value: `${sessions.filter((x) => x.status === 'CANCELED').length}회` },
+        ]} />
+      )}>
       <ErrorBox error={error} />
       {notice && <div className="alert alert-ok">{notice}</div>}
       {course.finalizedAt && (
@@ -148,9 +156,9 @@ export default function CourseDetail() {
               {sessions.map((s) => (
                 <Link key={s.id} to={`/admin/sessions/${s.id}`} className="card list-item">
                   <div>
-                    <div className="item-title">{s.sessionNo}회차 <SessionBadge status={s.status} /></div>
+                    <div className="item-title">{fmtDateTime(s.scheduledAt)} <SessionBadge status={s.status} /></div>
                     <div className="muted small">
-                      {fmtDateTime(s.scheduledAt)}
+                      {s.sessionNo}회차
                       {s.status === 'CANCELED'
                         ? (s.cancelReason && ` · ${s.cancelReason}`)
                         : <> · 반경 {s.radiusM}m · {s.checkinMinutes}분{s.latitude == null && <span className="warn"> · 장소 미지정</span>}</>}

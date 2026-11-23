@@ -4,7 +4,7 @@ import { get } from '../api'
 import { useAuth } from '../auth'
 import { Empty, ErrorBox, Layout, Loading } from '../components/ui'
 import SemesterPicker, { useSemester } from '../components/SemesterPicker'
-import { DAY_LABEL, WEEKDAYS as DAYS, fmtSlot, fromMinutes, toMinutes } from '../util'
+import { DAY_LABEL, WEEKDAYS as DAYS, fmtSchedules, fmtSlot, fromMinutes, toMinutes } from '../util'
 
 const HOUR_PX = 52
 
@@ -64,8 +64,8 @@ export default function Timetable() {
                       style={{ top: top(b.start), height: Math.max(top(b.end) - top(b.start) - 2, 18) }}
                       title={`${b.course.title} · ${fmtSlot(b.slot)}${b.course.room ? ` · ${b.course.room}` : ''}`}>
                       <span className="tt-title">{b.course.title}</span>
-                      <span className="tt-time">{b.slot.startTime}–{fromMinutes(b.end)}</span>
-                      {b.course.room && <span className="tt-time">{b.course.room}</span>}
+                      {b.course.room ? <span className="tt-time">{b.course.room}</span>
+                        : <span className="tt-time">{b.slot.startTime}–{fromMinutes(b.end)}</span>}
                     </Link>
                   ))}
                 </div>
@@ -73,6 +73,19 @@ export default function Timetable() {
             </div>
           </div>
 
+          {blocks.length > 0 && (
+            <div className="card table-card tt-list">
+              {sem.filter(courses).filter((c) => (c.schedules ?? []).length).map((c) => (
+                <Link key={c.id} to={linkOf(c)} className="list-item" style={{ borderTop: '1px solid var(--line)' }}>
+                  <div>
+                    <div className="item-title">{c.title}</div>
+                    <div className="muted small">{fmtSchedules(c.schedules)}</div>
+                  </div>
+                  <span className="muted small">{c.room || '강의실 미정'}</span>
+                </Link>
+              ))}
+            </div>
+          )}
           {blocks.length === 0 && (
             <Empty>{isAdmin ? '교육을 만들 때 수업 요일·시간을 넣으면 여기에 보여요.' : '아직 시간표가 정해진 교육이 없어요.'}</Empty>
           )}

@@ -11,19 +11,18 @@ export default function StudentProfile() {
   useEffect(() => { get('/me/profile').then(setData).catch(setError) }, [])
 
   return (
-    <Layout back="/student" title="프로필">
+    <Layout back="/student" title="프로필" hero={data && (
+      <div className="profile-hero">
+        <div className="avatar" aria-hidden="true">{data.name?.slice(0, 1)}</div>
+        <div style={{ minWidth: 0 }}>
+          <div className="name">{data.name}</div>
+          <div className="meta">{data.department && `${data.department} · `}{data.studentNo ? `학번 ${data.studentNo}` : '학번 미입력'}</div>
+        </div>
+      </div>
+    )}>
       <ErrorBox error={error} />
       {!data ? (!error && <Loading />) : (
         <>
-          <div className="card profile-card">
-            <div className="profile-avatar" aria-hidden="true">{data.name?.slice(0, 1)}</div>
-            <div className="profile-info">
-              <div className="profile-name">{data.name}</div>
-              <div className="muted small">
-                {data.department && `${data.department} · `}{data.studentNo ? `학번 ${data.studentNo}` : '학번 미입력'} · {data.email}
-              </div>
-            </div>
-          </div>
 
           <AccountCard name={data.name} email={data.email} department={data.department}
             onNameChange={(name) => setData({ ...data, name })}
