@@ -96,6 +96,9 @@ public class AttendanceService {
     public RosterRow changeStatus(Long sessionId, Long userId, AttendanceStatus status, AuthUser admin) {
         ClassSession session = sessionService.getOwnedSession(sessionId, admin);
         session.getCourse().requireEditable(); // 출결이 확정된 교육은 읽기 전용(일괄 처리·출석 인정 승인도 여기를 거친다)
+        if (session.isCanceled()) {
+            throw new ApiException(ErrorCode.SESSION_CANCELED, "휴강한 회차라 출결을 기록하지 않아요");
+        }
         Enrollment enrollment = enrollmentRepository.findByCourseIdAndUserId(session.getCourse().getId(), userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "이 교육의 수강생이 아니에요"));
         LocalDateTime now = LocalDateTime.now(clock);
@@ -181,7 +184,7 @@ public class AttendanceService {
                 .map(s -> {
                     Attendance a = bySession.get(s.getId());
                     return new MyRow(s.getId(), s.getSessionNo(), s.getScheduledAt(), s.getStatus(),
-                            a == null ? null : a.getStatus(), a == null ? null : a.getCheckedAt());
+                            a == null ? null : a.getStatus(), a == null ? null : a.getCheckedAt(), s.getCancelReason());
                 })
                 .toList();
         return new MyAttendanceResponse(course.getId(), course.getTitle(), rows);

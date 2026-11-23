@@ -124,8 +124,10 @@ export default function CourseDetail() {
                   <div>
                     <div className="item-title">{s.sessionNo}회차 <SessionBadge status={s.status} /></div>
                     <div className="muted small">
-                      {fmtDateTime(s.scheduledAt)} · 반경 {s.radiusM}m · {s.checkinMinutes}분
-                      {s.latitude == null && <span className="warn"> · 장소 미지정</span>}
+                      {fmtDateTime(s.scheduledAt)}
+                      {s.status === 'CANCELED'
+                        ? (s.cancelReason && ` · ${s.cancelReason}`)
+                        : <> · 반경 {s.radiusM}m · {s.checkinMinutes}분{s.latitude == null && <span className="warn"> · 장소 미지정</span>}</>}
                     </div>
                   </div>
                   <Icon name="chevron" size={20} className="chevron" />

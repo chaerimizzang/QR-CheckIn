@@ -51,7 +51,8 @@ public class StudentProfileService {
             List<ClassSession> sessions = sessionRepository.findByCourseIdOrderBySessionNoAsc(c.getId());
             int closed = (int) sessions.stream().filter(s -> s.getStatus() == SessionStatus.CLOSED).count();
             return new AdminProfileResponse.CourseSummary(
-                    c.getId(), c.getTitle(), enrollmentRepository.countByCourseId(c.getId()), sessions.size(), closed);
+                    c.getId(), c.getTitle(), enrollmentRepository.countByCourseId(c.getId()),
+                    com.qrcheckin.attendance.AttendanceRateService.plannedCount(sessions), closed);
         }).toList();
 
         long distinctStudents = owned.stream()

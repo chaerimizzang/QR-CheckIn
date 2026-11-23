@@ -62,6 +62,9 @@ public class AttendanceCsvService {
         ) {
 
             for (Attendance attendance : attendances) {
+                if (attendance.getSession().isCanceled()) {
+                    continue; // 휴강 회차는 출결부에 넣지 않는다(미리 인정된 기록이 남아 있어도)
+                }
 
                 String status = switch (attendance.getStatus()) {
                     case PRESENT -> "출석";

@@ -124,8 +124,14 @@ class AssistantTemplates {
         if (week.sessions().isEmpty()) {
             return "이번 주(" + range + ")에는 수업이 없어요.";
         }
-        Set<Long> inRange = week.sessions().stream().map(UpcomingSession::sessionId).collect(Collectors.toSet());
-        Set<Long> courseIds = week.sessions().stream().map(UpcomingSession::courseId)
+        List<UpcomingSession> held = week.sessions().stream().filter(s -> !s.canceled()).toList();
+        long canceled = week.sessions().size() - held.size();
+        String canceledNote = canceled == 0 ? "" : " 휴강인 수업 " + canceled + "개는 신청하지 않아도 돼요.";
+        if (held.isEmpty()) {
+            return "이번 주(" + range + ") 수업은 모두 휴강이에요.";
+        }
+        Set<Long> inRange = held.stream().map(UpcomingSession::sessionId).collect(Collectors.toSet());
+        Set<Long> courseIds = held.stream().map(UpcomingSession::courseId)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         long can = 0;
         for (Long courseId : courseIds) {
@@ -133,10 +139,10 @@ class AssistantTemplates {
             can += options.sessions().stream().filter(o -> inRange.contains(o.sessionId()) && o.canRequest()).count();
         }
         if (can == 0) {
-            return "이번 주(" + range + ") 수업 " + week.sessions().size() + "개 중 지금 출석 인정을 신청할 수 있는 회차는 없어요.";
+            return "이번 주(" + range + ") 수업 " + held.size() + "개 중 지금 출석 인정을 신청할 수 있는 회차는 없어요." + canceledNote;
         }
-        return "이번 주(" + range + ") 수업 " + week.sessions().size() + "개 중 출석 인정을 신청할 수 있는 회차는 "
-                + can + "개예요. 아래 버튼으로 바로 신청 화면을 열 수 있어요. 인정 여부는 교수님이 결정해요.";
+        return "이번 주(" + range + ") 수업 " + held.size() + "개 중 출석 인정을 신청할 수 있는 회차는 "
+                + can + "개예요. 아래 버튼으로 바로 신청 화면을 열 수 있어요. 인정 여부는 교수님이 결정해요." + canceledNote;
     }
 
     private <T> T add(AssistantEvidence ev, T result) {

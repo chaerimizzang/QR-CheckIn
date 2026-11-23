@@ -53,7 +53,10 @@ public final class AssistantDtos {
             LocalDateTime startAt,
             /** 주간 시간표에서 찾은 종료 시각(시간표와 맞지 않는 회차면 null) */
             LocalDateTime endAt,
-            SessionStatus sessionStatus) {
+            SessionStatus sessionStatus,
+            /** 휴강이면 true — "수업 있어?"에 휴강이라고 답한다 */
+            boolean canceled,
+            String cancelReason) {
     }
 
     public record UpcomingResult(LocalDateTime asOf, LocalDate from, LocalDate to, List<UpcomingSession> sessions) {

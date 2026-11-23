@@ -28,11 +28,18 @@ public final class SessionDtos {
 
     public record SessionResponse(Long id, Long courseId, int sessionNo, LocalDateTime scheduledAt,
                                   Double latitude, Double longitude, int radiusM, int checkinMinutes,
-                                  SessionStatus status, LocalDateTime openedAt, LocalDateTime closedAt) {
+                                  SessionStatus status, LocalDateTime openedAt, LocalDateTime closedAt,
+                                  /** 휴강 사유(휴강이 아니거나 사유가 없으면 null) */
+                                  String cancelReason) {
         public static SessionResponse from(ClassSession s) {
             return new SessionResponse(s.getId(), s.getCourse().getId(), s.getSessionNo(), s.getScheduledAt(),
                     s.getLatitude(), s.getLongitude(), s.getRadiusM(), s.getCheckinMinutes(),
-                    s.getStatus(), s.getOpenedAt(), s.getClosedAt());
+                    s.getStatus(), s.getOpenedAt(), s.getClosedAt(), s.getCancelReason());
         }
+    }
+
+    /** 휴강 요청: 사유는 선택(학생 알림·화면에 함께 표시) */
+    public record CancelRequest(
+            @jakarta.validation.constraints.Size(max = 200, message = "휴강 사유는 200자까지 쓸 수 있어요") String reason) {
     }
 }

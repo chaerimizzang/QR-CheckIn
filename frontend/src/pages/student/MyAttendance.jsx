@@ -7,7 +7,9 @@ import { SESSION_LABEL, STATUS_LABEL, WARNING, fmtDateTime } from '../../util'
 /** 출석 인정을 신청할 수 있는 회차: 결석·지각이거나, 아직 열리지 않은(미리 신청) 회차 */
 /** 날짜가 지났는데 출석을 열지 않은 회차(진행하지 않은 수업) */
 const neverHeld = (s) => s.sessionStatus === 'SCHEDULED' && new Date(s.scheduledAt) < new Date()
-const canRequest = (s) => s.status === 'ABSENT' || s.status === 'LATE' || (!s.status && s.sessionStatus !== 'OPEN' && !neverHeld(s))
+const canceled = (s) => s.sessionStatus === 'CANCELED'
+const canRequest = (s) => !canceled(s) &&
+  (s.status === 'ABSENT' || s.status === 'LATE' || (!s.status && s.sessionStatus !== 'OPEN' && !neverHeld(s)))
 
 /** S-04 내 출결 */
 export default function MyAttendance() {
@@ -25,7 +27,7 @@ export default function MyAttendance() {
       .catch(() => {})
   }, [courseId])
 
-  const count = (st) => data?.sessions.filter((s) => s.status === st).length ?? 0
+  const count = (st) => data?.sessions.filter((s) => !canceled(s) && s.status === st).length ?? 0
 
   return (
     <Layout back={back} title={data?.courseTitle}>
@@ -49,7 +51,9 @@ export default function MyAttendance() {
                 <div key={s.sessionId} className="card list-item">
                   <div>
                     <div className="item-title">{s.sessionNo}회차</div>
-                    <div className="muted small">{fmtDateTime(s.scheduledAt)}</div>
+                    <div className="muted small">
+                      {fmtDateTime(s.scheduledAt)}{canceled(s) && s.cancelReason && ` · ${s.cancelReason}`}
+                    </div>
                   </div>
                   <div className="att-right">
                     {canRequest(s) && (
@@ -57,7 +61,7 @@ export default function MyAttendance() {
                         출석 인정 신청
                       </Link>
                     )}
-                    {s.status
+                    {s.status && !canceled(s)
                       ? <span className={`badge badge-lg badge-${s.status.toLowerCase()}`}>{STATUS_LABEL[s.status]}</span>
                       : <span className={`badge badge-lg badge-s-${s.sessionStatus.toLowerCase()}`}>{neverHeld(s) ? '미진행' : SESSION_LABEL[s.sessionStatus]}</span>}
                   </div>

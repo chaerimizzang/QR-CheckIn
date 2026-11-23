@@ -80,6 +80,7 @@ public class AttendanceRequestService {
         LocalDateTime now = LocalDateTime.now(clock);
         return sessions.findByCourseIdOrderBySessionNoAsc(courseId).stream()
                 .filter(s -> !neverHeld(s, now)) // 날짜가 지났는데 한 번도 열지 않은 회차는 수업이 없었던 것
+                .filter(s -> !s.isCanceled()) // 휴강은 신청할 필요가 없다
                 .map(s -> new SessionOption(s.getId(), s.getSessionNo(), s.getScheduledAt(), s.getStatus(),
                         mine.get(s.getId()),
                         requests.existsBySessionIdAndStudentIdAndStatus(s.getId(), student.id(), RequestStatus.PENDING)))
@@ -94,6 +95,9 @@ public class AttendanceRequestService {
         requireEnrolled(session.getCourse().getId(), student.id());
         if (session.getCourse().isFinalized()) {
             throw new ApiException(ErrorCode.COURSE_FINALIZED, "출결이 확정된 수업이라 신청할 수 없어요");
+        }
+        if (session.isCanceled()) {
+            throw new ApiException(ErrorCode.SESSION_CANCELED, "휴강한 수업이라 신청하지 않아도 돼요");
         }
         String text = reason == null ? "" : reason.strip();
         if (text.isEmpty() || text.length() > 500) {

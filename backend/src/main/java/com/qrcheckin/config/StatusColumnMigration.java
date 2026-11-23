@@ -31,6 +31,8 @@ public class StatusColumnMigration implements ApplicationRunner {
             {"attendance", "status", "true"},
             {"attendance_history", "old_status", "false"},
             {"attendance_history", "new_status", "true"},
+            // 회차 상태에 휴강(CANCELED)을 더해서 회차 상태 열도 바꾼다
+            {"class_session", "status", "true"},
     };
 
     /** 예전 공결(EXCUSED) 값이 남아 있을 수 있는 열 */
