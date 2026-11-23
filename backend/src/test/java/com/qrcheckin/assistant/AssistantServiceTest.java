@@ -255,11 +255,14 @@ class AssistantServiceTest {
                 .andExpect(jsonPath("$.answer").value(Matchers.containsString("자료구조(위험, 남은 결석 0회)")))
                 .andExpect(jsonPath("$.actions[0].path").value("/student/courses/" + course + "?from=attendance"));
 
-        // 추천 질문이 아니면 503
-        fake.script.add(new LlmException(LlmException.Kind.RATE_LIMITED, "429"));
+        // 추천 질문이 아니면 503 — 분당 한도는 몇 초 뒤에 다시, 하루 한도는 오늘 사용량을 다 썼다고 구분
+        fake.script.add(new LlmException(LlmException.Kind.RATE_LIMITED, "429", null, false, 23));
         ask("{\"message\":\"아무 질문\"}", kim)
                 .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.message").value(Matchers.containsString("무료 사용량")));
+                .andExpect(jsonPath("$.message").value(Matchers.containsString("23초쯤 뒤에 다시")));
+        fake.script.add(new LlmException(LlmException.Kind.RATE_LIMITED, "429", null, true, 0));
+        ask("{\"message\":\"아무 질문\"}", kim)
+                .andExpect(jsonPath("$.message").value(Matchers.containsString("오늘 AI 무료 사용량")));
     }
 
     @Test

@@ -100,10 +100,20 @@ public class AssistantService {
             if (preset != null) {
                 return template(preset, user, now, SOURCE_TEMPLATE);
             }
-            throw new ApiException(ErrorCode.ASSISTANT_UNAVAILABLE, e.kind() == LlmException.Kind.RATE_LIMITED
-                    ? "오늘 AI 무료 사용량을 다 써서 답하기 어려워요. 추천 질문은 지금도 쓸 수 있어요"
-                    : ErrorCode.ASSISTANT_UNAVAILABLE.defaultMessage());
+            throw new ApiException(ErrorCode.ASSISTANT_UNAVAILABLE, unavailableMessage(e));
         }
+    }
+
+    /** 무료 한도 초과는 분당·하루를 구분해 언제 다시 물으면 되는지 알려 준다 */
+    static String unavailableMessage(LlmException e) {
+        if (e.kind() != LlmException.Kind.RATE_LIMITED) {
+            return ErrorCode.ASSISTANT_UNAVAILABLE.defaultMessage();
+        }
+        if (e.daily()) {
+            return "오늘 AI 무료 사용량을 다 써서 답하기 어려워요. 추천 질문은 지금도 쓸 수 있어요";
+        }
+        String when = e.retryAfterSeconds() > 0 ? e.retryAfterSeconds() + "초쯤 뒤에" : "1분쯤 뒤에";
+        return "질문이 한꺼번에 몰려 AI가 잠시 쉬는 중이에요. " + when + " 다시 물어봐 주세요. 추천 질문은 지금도 쓸 수 있어요";
     }
 
     private AskResponse template(PresetId preset, AuthUser user, LocalDateTime now, String source) {

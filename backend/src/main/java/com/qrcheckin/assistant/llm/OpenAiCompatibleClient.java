@@ -109,7 +109,14 @@ public class OpenAiCompatibleClient implements LlmClient {
                     .body(String.class);
         } catch (HttpStatusCodeException e) {
             if (e.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
-                throw new LlmException(LlmException.Kind.RATE_LIMITED, "무료 한도를 넘었어요(429)", e);
+                String err = e.getResponseBodyAsString();
+                // Gemini 는 어떤 한도인지(…PerDay… / …PerMinute…)와 retryDelay("23s")를 본문에 알려 준다
+                boolean daily = err != null && err.contains("PerDay");
+                int retryAfter = retryAfterSeconds(e.getResponseHeaders() == null ? null
+                        : e.getResponseHeaders().getFirst(HttpHeaders.RETRY_AFTER), err);
+                throw new LlmException(LlmException.Kind.RATE_LIMITED,
+                        "무료 한도 초과(429, " + (daily ? "하루" : "분당") + " 한도, " + retryAfter + "초 뒤): " + shorten(err),
+                        e, daily, retryAfter);
             }
             throw new LlmException(LlmException.Kind.FAILED,
                     "LLM 오류 " + e.getStatusCode().value() + ": " + shorten(e.getResponseBodyAsString()), e);
@@ -134,6 +141,23 @@ public class OpenAiCompatibleClient implements LlmClient {
         } catch (JsonProcessingException e) {
             throw new LlmException(LlmException.Kind.FAILED, "응답을 읽지 못했어요: " + shorten(raw), e);
         }
+    }
+
+    private static final java.util.regex.Pattern RETRY_DELAY =
+            java.util.regex.Pattern.compile("\"retryDelay\"\\s*:\\s*\"(\\d+)(?:\\.\\d+)?s\"");
+
+    /** Retry-After 헤더(초) 또는 Gemini 본문의 retryDelay("23s"). 모르면 0 */
+    static int retryAfterSeconds(String header, String body) {
+        if (header != null && header.trim().matches("\\d+")) {
+            return Integer.parseInt(header.trim());
+        }
+        if (body != null) {
+            java.util.regex.Matcher m = RETRY_DELAY.matcher(body);
+            if (m.find()) {
+                return Integer.parseInt(m.group(1));
+            }
+        }
+        return 0;
     }
 
     private static String trimSlash(String s) {

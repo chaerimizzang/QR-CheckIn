@@ -15,15 +15,32 @@ public class LlmException extends Exception {
     }
 
     private final Kind kind;
+    /** 429 일 때: 하루 한도인지(아니면 분당 한도) */
+    private final boolean daily;
+    /** 429 일 때: 공급자가 알려 준 다시 시도까지 남은 초(모르면 0) */
+    private final int retryAfterSeconds;
 
     public LlmException(Kind kind, String message) {
-        super(message);
-        this.kind = kind;
+        this(kind, message, null);
     }
 
     public LlmException(Kind kind, String message, Throwable cause) {
+        this(kind, message, cause, false, 0);
+    }
+
+    public LlmException(Kind kind, String message, Throwable cause, boolean daily, int retryAfterSeconds) {
         super(message, cause);
         this.kind = kind;
+        this.daily = daily;
+        this.retryAfterSeconds = retryAfterSeconds;
+    }
+
+    public boolean daily() {
+        return daily;
+    }
+
+    public int retryAfterSeconds() {
+        return retryAfterSeconds;
     }
 
     public Kind kind() {
