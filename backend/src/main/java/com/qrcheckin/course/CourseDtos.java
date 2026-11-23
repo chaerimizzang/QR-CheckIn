@@ -32,20 +32,22 @@ public final class CourseDtos {
             @Size(max = 10, message = "수업 시간은 10개까지 넣을 수 있어요") List<@Valid WeeklyPlan> schedules,
             /** 학기(선택) — 비우면 시작일(없으면 오늘)로 정한다 */
             Integer semesterYear,
-            SemesterTerm semesterTerm) {
+            SemesterTerm semesterTerm,
+            /** 강의실(선택, 예: 공학관 302호) */
+            @Size(max = 50, message = "강의실은 50자 이내로 입력해 주세요") String room) {
     }
 
     /** schedules: 주간 시간표(월요일부터 정렬) */
     public record CourseResponse(Long id, String title, LocalDate startDate, LocalDate endDate,
                                  String ownerName, long studentCount, List<ScheduleSlot> schedules,
                                  Integer semesterYear, SemesterTerm semesterTerm, String semesterKey,
-                                 String semesterLabel, LocalDateTime finalizedAt) {
+                                 String semesterLabel, LocalDateTime finalizedAt, String room) {
         public static CourseResponse of(Course c, long studentCount, List<ScheduleSlot> schedules) {
             Semester s = c.getSemester();
             return new CourseResponse(c.getId(), c.getTitle(), c.getStartDate(), c.getEndDate(),
                     c.getOwner().getName(), studentCount, schedules,
                     s == null ? null : s.year(), s == null ? null : s.term(),
-                    s == null ? null : s.key(), s == null ? "학기 미정" : s.label(), c.getFinalizedAt());
+                    s == null ? null : s.key(), s == null ? "학기 미정" : s.label(), c.getFinalizedAt(), c.getRoom());
         }
     }
 
@@ -64,9 +66,9 @@ public final class CourseDtos {
     public record EnrollmentRequest(@NotBlank @Email String email) {
     }
 
-    public record StudentResponse(Long userId, String email, String name, String studentNo) {
+    public record StudentResponse(Long userId, String email, String name, String studentNo, String department) {
         public static StudentResponse from(User u) {
-            return new StudentResponse(u.getId(), u.getEmail(), u.getName(), u.getStudentNo());
+            return new StudentResponse(u.getId(), u.getEmail(), u.getName(), u.getStudentNo(), u.getDepartment());
         }
     }
 }

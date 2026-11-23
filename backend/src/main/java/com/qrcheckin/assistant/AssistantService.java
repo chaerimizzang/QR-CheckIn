@@ -151,7 +151,9 @@ public class AssistantService {
         ev.allowFrom(summaryJson);
 
         ArrayNode messages = om.createArrayNode();
-        messages.add(message("system", AssistantPrompt.system(now, summaryJson)));
+        String failRule = tools.policy().description();
+        ev.allowFrom(failRule); // "2/3 이상 출석", "1/3을 넘으면" 같은 규칙 숫자는 답변에 써도 된다
+        messages.add(message("system", AssistantPrompt.system(now, summaryJson, failRule)));
         List<Turn> history = req.history() == null ? List.of() : req.history();
         for (Turn t : history) {
             messages.add(message(t.role(), t.text()));

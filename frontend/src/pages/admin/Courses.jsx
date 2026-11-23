@@ -13,6 +13,7 @@ import WeeklyPlanFields from '../../components/WeeklyPlanFields'
 export default function Courses() {
   const [courses, setCourses] = useState(null)
   const [title, setTitle] = useState('')
+  const [room, setRoom] = useState('')
   const [period, setPeriod] = useState({ startMonth: '', endMonth: '' })
   const [plans, setPlans] = useState([])
   const [pending, setPending] = useState(false)
@@ -46,6 +47,7 @@ export default function Courses() {
     try {
       const c = await post('/courses', {
         title,
+        room,
         startDate: monthStart(period.startMonth),
         endDate: monthEnd(period.endMonth),
         // 수업 시간을 넣었으면 시간표 저장 + 오늘부터 끝 월까지 회차 자동 생성
@@ -72,6 +74,7 @@ export default function Courses() {
       {showForm && (
         <form className="card" onSubmit={create}>
           <label>교육 이름<input placeholder="예: 데이터베이스 실습" value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus /></label>
+          <label>강의실 <span className="muted small">(선택)</span><input placeholder="예: 공학관 302호" value={room} onChange={(e) => setRoom(e.target.value)} maxLength={50} /></label>
           <div className="grid2">
             <label>시작 월<input type="month" value={period.startMonth} onChange={(e) => setPeriod({ ...period, startMonth: e.target.value })} /></label>
             <label>끝 월<input type="month" value={period.endMonth} min={period.startMonth || undefined} onChange={(e) => setPeriod({ ...period, endMonth: e.target.value })} /></label>
@@ -102,7 +105,7 @@ export default function Courses() {
               <div>
                 <div className="item-title">{c.title}{c.finalizedAt && <span className="badge badge-final">출결 확정</span>}</div>
                 <div className="muted small">
-                  {sem.value === 'ALL' && `${c.semesterLabel} · `}수강생 {c.studentCount}명{fmtSchedules(c.schedules) && ` · ${fmtSchedules(c.schedules)}`}
+                  {sem.value === 'ALL' && `${c.semesterLabel} · `}수강생 {c.studentCount}명{fmtSchedules(c.schedules) && ` · ${fmtSchedules(c.schedules)}`}{c.room && ` · ${c.room}`}
                 </div>
               </div>
               <Icon name="chevron" size={20} className="chevron" />

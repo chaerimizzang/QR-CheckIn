@@ -42,6 +42,7 @@ public class AuthService {
         }
         User user = new User(email, passwordEncoder.encode(req.password()), req.name().trim(),
                 blankToNull(req.studentNo()), req.role(), LocalDateTime.now(clock));
+        user.changeDepartment(blankToNull(req.department()));
         try {
             return UserResponse.from(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) { // 동시 가입 경쟁
@@ -74,6 +75,15 @@ public class AuthService {
             throw new ApiException(ErrorCode.VALIDATION_FAILED, "이름을 입력해 주세요");
         }
         user.changeName(trimmed);
+        return UserResponse.from(user);
+    }
+
+    /** 프로필에서 학과 변경. 비우면 지운다 */
+    @Transactional
+    public UserResponse changeDepartment(Long userId, String department) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
+        user.changeDepartment(blankToNull(department));
         return UserResponse.from(user);
     }
 

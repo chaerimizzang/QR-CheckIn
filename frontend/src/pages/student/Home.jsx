@@ -39,7 +39,7 @@ export default function StudentHome() {
             <Link key={c.id} to={`/student/courses/${c.id}`} className="card list-item">
               <div>
                 <div className="item-title">{c.title}{c.finalizedAt && <span className="badge badge-final">출결 확정</span>}</div>
-                <div className="muted small">{sem.value === 'ALL' && `${c.semesterLabel} · `}{c.ownerName}{fmtSchedules(c.schedules) && ` · ${fmtSchedules(c.schedules)}`}</div>
+                <div className="muted small">{sem.value === 'ALL' && `${c.semesterLabel} · `}{c.ownerName}{fmtSchedules(c.schedules) && ` · ${fmtSchedules(c.schedules)}`}{c.room && ` · ${c.room}`}</div>
               </div>
               <Icon name="chevron" size={20} className="chevron" />
             </Link>

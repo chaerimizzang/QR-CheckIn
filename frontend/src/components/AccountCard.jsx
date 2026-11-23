@@ -4,13 +4,15 @@ import { post, put } from '../api'
 import { useAuth } from '../auth'
 import { ErrorBox } from './ui'
 
-/** 프로필의 [계정] 카드: 이름 변경 · 비밀번호 변경 */
-export default function AccountCard({ name, email, onNameChange }) {
+/** 프로필의 [계정] 카드: 이름·학과 변경 · 비밀번호 변경 */
+export default function AccountCard({ name, email, department, onNameChange, onDepartmentChange }) {
   const { user, updateUser } = useAuth()
   const [params, setParams] = useSearchParams()
   const [editingName, setEditingName] = useState(false)
   const [pwOpen, setPwOpen] = useState(params.get('password') === '1')
   const [nameInput, setNameInput] = useState(name)
+  const [editingDept, setEditingDept] = useState(false)
+  const [deptInput, setDeptInput] = useState(department || '')
   const [pw, setPw] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [error, setError] = useState(null)
   const [done, setDone] = useState('')
@@ -29,6 +31,22 @@ export default function AccountCard({ name, email, onNameChange }) {
       onNameChange?.(me.name)
       setEditingName(false)
       setDone('이름을 바꿨어요')
+    } catch (err) { setError(err) } finally { setBusy(false) }
+  }
+
+  function startDept() {
+    setDeptInput(department || ''); setEditingDept(true); setError(null); setDone('')
+  }
+
+  async function saveDept(e) {
+    e.preventDefault()
+    setBusy(true); setError(null)
+    try {
+      const me = await put('/me/department', { department: deptInput })
+      updateUser({ ...user, department: me.department })
+      onDepartmentChange?.(me.department)
+      setEditingDept(false)
+      setDone(me.department ? '학과를 바꿨어요' : '학과를 지웠어요')
     } catch (err) { setError(err) } finally { setBusy(false) }
   }
 
@@ -78,6 +96,25 @@ export default function AccountCard({ name, email, onNameChange }) {
           <>
             <div className="account-value">{name}</div>
             <button type="button" className="link-btn small" onClick={startName}>변경</button>
+          </>
+        )}
+      </div>
+
+      <div className="account-row">
+        <div className="account-label">학과</div>
+        {editingDept ? (
+          <form className="account-edit" onSubmit={saveDept}>
+            <input value={deptInput} onChange={(e) => setDeptInput(e.target.value)} maxLength={50} autoFocus
+              aria-label="학과" placeholder="예: 컴퓨터인공지능공학과" disabled={busy} />
+            <div className="btn-row">
+              <button className="btn btn-primary btn-sm" disabled={busy || deptInput.trim() === (department || '')}>저장</button>
+              <button type="button" className="btn btn-sm" onClick={() => setEditingDept(false)} disabled={busy}>취소</button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <div className={`account-value${department ? '' : ' muted'}`}>{department || '미입력'}</div>
+            <button type="button" className="link-btn small" onClick={startDept}>변경</button>
           </>
         )}
       </div>

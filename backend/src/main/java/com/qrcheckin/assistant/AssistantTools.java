@@ -72,7 +72,7 @@ public class AssistantTools {
                           CourseScheduleRepository schedules, StudentProfileService profileService,
                           AttendanceRateService rateService, AttendanceRequestService requestService,
                           UserRepository users, Clock clock,
-                          @Value("${app.attendance.fail-ratio:0.25}") double failRatio) {
+                          @Value("${app.attendance.fail-ratio:0.3333333333}") double failRatio) {
         this.enrollments = enrollments;
         this.courses = courses;
         this.sessions = sessions;
@@ -87,10 +87,9 @@ public class AssistantTools {
 
     /** 답변 근거 카드에 보여 줄 규칙(서비스 설정값 — 학교 공식 학칙이 아님) */
     public Policy policy() {
-        int percent = (int) Math.round(failRatio * 100);
         return new Policy(failRatio, AbsenceRule.LATES_PER_ABSENCE,
-                "지각 " + AbsenceRule.LATES_PER_ABSENCE + "회 = 결석 1회, 인정 결석이 전체 회차의 " + percent
-                        + "%를 넘으면 F 기준 (이 서비스의 출결 규칙)");
+                "지각 " + AbsenceRule.LATES_PER_ABSENCE + "회 = 결석 1회, " + AbsenceRule.ruleText(failRatio)
+                        + " (이 서비스의 출결 규칙)");
     }
 
     // ---------------- getMyCourses ----------------

@@ -8,7 +8,9 @@ public record AdminProfileResponse(
         String email,
         int courseCount,
         long studentCount,
-        List<CourseSummary> courses) {
+        List<CourseSummary> courses,
+        /** 학과(없으면 null) */
+        String department) {
 
     /**
      * @param studentCount       수강생 수

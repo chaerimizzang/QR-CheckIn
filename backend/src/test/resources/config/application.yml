@@ -1,7 +1,11 @@
 # 테스트 전용 추가 설정(classpath:/config/ 라서 main 의 application.yml 위에 덮어쓴다 — main 설정은 그대로 읽힘)
 # 노트북 .env 에 진짜 LLM 키가 있어도 테스트는 Gemini 를 부르지 않는다(무료 한도 보호).
 # AI 도우미 테스트는 가짜 LLM(FakeLlm)을 쓴다.
+# 출결 계산 테스트(경계값·휴강·AI 도우미)는 1/4 기준으로 만든 숫자라 테스트에서만 0.25 로 고정한다.
+# 실제 기준(1/3, 2/3 이상 출석)은 AbsenceRuleTest 가 따로 확인한다.
 app:
+  attendance:
+    fail-ratio: 0.25
   assistant:
     api-key: ""
     startup-check: false

@@ -42,7 +42,7 @@ class AttendanceSimulatorTest {
         assertThat(r.current().level()).isEqualTo(Level.DANGER);
         assertThat(r.simulated().remainingAbsences()).isEqualTo(-1);
         assertThat(r.simulated().level()).isEqualTo(Level.FAIL);
-        assertThat(r.simulated().message()).isEqualTo("결석이 수업의 1/4을 넘었어요(F 기준)");
+        assertThat(r.simulated().message()).isEqualTo("결석이 F 기준을 넘었어요");
     }
 
     @Test

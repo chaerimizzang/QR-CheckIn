@@ -21,11 +21,13 @@ export default function AdminProfile() {
             <div className="profile-avatar" aria-hidden="true">{data.name?.slice(0, 1)}</div>
             <div className="profile-info">
               <div className="profile-name">{data.name}</div>
-              <div className="muted small">관리자 · {data.email}</div>
+              <div className="muted small">관리자{data.department && ` · ${data.department}`} · {data.email}</div>
             </div>
           </div>
 
-          <AccountCard name={data.name} email={data.email} onNameChange={(name) => setData({ ...data, name })} />
+          <AccountCard name={data.name} email={data.email} department={data.department}
+            onNameChange={(name) => setData({ ...data, name })}
+            onDepartmentChange={(department) => setData({ ...data, department })} />
           <PushCard />
 
           <div className="stat-row">

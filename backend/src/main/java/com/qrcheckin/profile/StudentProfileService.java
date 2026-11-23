@@ -61,7 +61,8 @@ public class StudentProfileService {
                 .distinct()
                 .count();
 
-        return new AdminProfileResponse(me.getName(), me.getEmail(), owned.size(), distinctStudents, courses);
+        return new AdminProfileResponse(me.getName(), me.getEmail(), owned.size(), distinctStudents, courses,
+                me.getDepartment());
     }
 
     @Transactional(readOnly = true)
@@ -74,7 +75,7 @@ public class StudentProfileService {
                 .map(e -> summary(e.getCourse(), me))
                 .toList();
 
-        return new StudentProfileResponse(me.getName(), me.getStudentNo(), me.getEmail(), courses);
+        return new StudentProfileResponse(me.getName(), me.getStudentNo(), me.getEmail(), courses, me.getDepartment());
     }
 
     private CourseSummary summary(Course course, User me) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { del, get, post } from '../../api'
+import { del, get, post, put } from '../../api'
 import { Empty, ErrorBox, Layout, Loading, SessionBadge } from '../../components/ui'
 import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal, WARNING } from '../../util'
 import StudentCsvTools from '../../components/StudentCsvTools'
@@ -20,6 +20,7 @@ export default function CourseDetail() {
   const [scheduledAt, setScheduledAt] = useState(nextHourLocal())
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
+  const [roomEdit, setRoomEdit] = useState(null) // 강의실 바꾸는 중이면 입력값
 
   const load = () => Promise.all([
   get(`/courses/${courseId}`).then(setCourse),
@@ -88,6 +89,19 @@ export default function CourseDetail() {
     } catch (err) { setError(err) }
   }
 
+  // 강의실만 바꾼다 — 교육 수정 API 는 이름·기간·학기를 함께 받으므로 지금 값을 그대로 보낸다
+  async function saveRoom(e) {
+    e.preventDefault()
+    setError(null)
+    try {
+      const c = await put(`/courses/${courseId}`, {
+        title: course.title, startDate: course.startDate, endDate: course.endDate,
+        semesterYear: course.semesterYear, semesterTerm: course.semesterTerm, room: roomEdit,
+      })
+      setCourse(c); setRoomEdit(null)
+    } catch (err) { setError(err) }
+  }
+
   if (!course) return <Layout back="/admin"><ErrorBox error={error} /><Loading /></Layout>
 
   return (
@@ -103,7 +117,19 @@ export default function CourseDetail() {
       <p className="muted small course-meta">
         {course.semesterLabel} · {fmtSchedules(course.schedules) || '시간표 미정'}
         {fmtPeriod(course.startDate, course.endDate) && ` · ${fmtPeriod(course.startDate, course.endDate)}`}
+        {' · '}{course.room || '강의실 미정'}
+        {!course.finalizedAt && roomEdit === null && (
+          <> <button type="button" className="link-btn small" onClick={() => setRoomEdit(course.room || '')}>강의실 변경</button></>
+        )}
       </p>
+      {roomEdit !== null && (
+        <form className="card row-form" onSubmit={saveRoom}>
+          <input value={roomEdit} onChange={(e) => setRoomEdit(e.target.value)} maxLength={50} placeholder="예: 공학관 302호"
+            aria-label="강의실" autoFocus />
+          <button className="btn btn-primary">저장</button>
+          <button type="button" className="btn" onClick={() => setRoomEdit(null)}>취소</button>
+        </form>
+      )}
 
       <div className="tabs">
   <button className={tab === 'sessions' ? 'on' : ''} onClick={() => setTab('sessions')}>회차 {sessions?.length ?? ''}</button>

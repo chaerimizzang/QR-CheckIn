@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.qrcheckin.auth.AuthDtos.ChangeDepartmentRequest;
 import com.qrcheckin.auth.AuthDtos.ChangeNameRequest;
 import com.qrcheckin.auth.AuthDtos.LoginRequest;
 import com.qrcheckin.auth.AuthDtos.SignupRequest;
@@ -50,5 +51,12 @@ public class AuthController {
     @PutMapping("/me/name")
     public UserResponse changeName(@AuthenticationPrincipal AuthUser user, @Valid @RequestBody ChangeNameRequest req) {
         return authService.changeName(user.id(), req.name());
+    }
+
+    /** 프로필에서 학과 변경(비우면 지움) */
+    @PutMapping("/me/department")
+    public UserResponse changeDepartment(@AuthenticationPrincipal AuthUser user,
+                                         @Valid @RequestBody ChangeDepartmentRequest req) {
+        return authService.changeDepartment(user.id(), req.department());
     }
 }

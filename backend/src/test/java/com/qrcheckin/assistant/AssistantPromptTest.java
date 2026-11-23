@@ -12,11 +12,13 @@ class AssistantPromptTest {
     @Test
     void 퍼센트가_있어도_지시문을_만든다() {
         String s = AssistantPrompt.system(LocalDateTime.of(2026, 11, 23, 9, 5),
-                "[{\"courseId\":6,\"title\":\"데이터베이스 100%\",\"remainingAbsences\":3}]");
+                "[{\"courseId\":6,\"title\":\"데이터베이스 100%\",\"remainingAbsences\":3}]",
+                "수업의 2/3 이상 출석해야 해요(결석이 1/3을 넘으면 F 기준)");
         assertThat(s)
                 .contains("오늘은 2026-11-23(월), 지금 시각은 09:05")
                 .contains("출석률(%)")
                 .contains("\"title\":\"데이터베이스 100%\"")
-                .doesNotContain("{TODAY}").doesNotContain("{SUMMARY}");
+                .contains("수업의 2/3 이상 출석해야 해요(결석이 1/3을 넘으면 F 기준)")
+                .doesNotContain("{TODAY}").doesNotContain("{SUMMARY}").doesNotContain("{FAIL_RULE}");
     }
 }

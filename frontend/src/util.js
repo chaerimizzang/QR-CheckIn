@@ -93,7 +93,7 @@ export const semesterLabel = (s) => `${s.year}년 ${TERMS.find((t) => t.term ===
 export const WARNING = {
   WARNING: { label: '결석 주의', text: '2번 더 결석하면 F 기준을 넘어요', cls: 'warn-warning' },
   DANGER: { label: '결석 위험', text: '1번만 더 결석해도 F 기준을 넘어요', cls: 'warn-danger' },
-  FAIL: { label: 'F 기준 초과', text: '결석이 수업의 1/4을 넘었어요', cls: 'warn-fail' },
+  FAIL: { label: 'F 기준 초과', text: '결석이 F 기준을 넘었어요', cls: 'warn-fail' },
 }
 
 export const STATUS_LABEL = { PRESENT: '출석', LATE: '지각', ABSENT: '결석' }

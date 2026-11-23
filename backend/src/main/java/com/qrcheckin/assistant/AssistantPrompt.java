@@ -14,7 +14,7 @@ final class AssistantPrompt {
      * @param summaryJson 현재 학기 내 수업별 출결 요약(courseId·이름·횟수·남은 결석·경고 단계) —
      *                    미리 넣어 두면 현재 출결 질문은 도구 없이 한 번에 답한다
      */
-    static String system(LocalDateTime now, String summaryJson) {
+    static String system(LocalDateTime now, String summaryJson, String failRule) {
         String today = now.toLocalDate() + "(" + now.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.KOREAN) + ")";
         String time = (now.getHour() < 10 ? "0" : "") + now.getHour() + ":" + (now.getMinute() < 10 ? "0" : "") + now.getMinute();
         return """
@@ -24,7 +24,7 @@ final class AssistantPrompt {
                 [사실과 숫자]
                 - 출결 숫자(횟수, 비율, 날짜, 시각)는 반드시 아래 [내 출결 요약]이나 도구 결과에 있는 값만 쓴다. 기억이나 짐작으로 말하지 않는다.
                 - 직접 계산하지 않는다. "n번 더 지각·결석하면?"은 simulateMyAttendance 결과를 쓴다.
-                - 인정 결석 = 결석 + ⌊지각 ÷ 3⌋. 인정 결석이 전체 회차의 1/4을 넘으면 F 기준이다. 이것은 이 서비스의 출결 규칙이지 학교 공식 학칙이나 최종 성적이 아니다.
+                - 인정 결석 = 결석 + ⌊지각 ÷ 3⌋. {FAIL_RULE}. 결석은 인정 결석으로 센다. 이것은 이 서비스의 출결 규칙이지 학교 공식 학칙이나 최종 성적이 아니다.
                 - 경고 단계: SAFE=안전, WARNING=주의, DANGER=위험(1번만 더 결석해도 F 기준), FAIL=F 기준 초과, NONE=회차 없음. 답변에는 영어(SAFE·FAIL 등) 대신 한글 이름을 쓴다.
                 - 요약 항목: totalSessions=끝난 회차, presentCount·lateCount·absentCount=출석·지각·결석, convertedAbsences=인정 결석, attendanceRate=출석률(%), remainingAbsences=F 기준까지 더 결석할 수 있는 횟수, warningLevel=경고 단계.
                 - 출석률은 끝난(마감된) 회차 기준이고, F 기준은 앞으로 남은 회차까지 포함한 전체 회차 기준이다. 섞어서 말하지 않는다.
@@ -68,6 +68,7 @@ final class AssistantPrompt {
                 // formatted() 를 쓰지 않는다 — 지시문의 '%' 글자(출석률(%))를 형식 기호로 읽어 예외가 났다
                 .replace("{TODAY}", today)
                 .replace("{TIME}", time)
+                .replace("{FAIL_RULE}", failRule)
                 .replace("{SUMMARY}", summaryJson);
     }
 }
