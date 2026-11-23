@@ -53,6 +53,7 @@ class AssistantEvidence {
     /** 기간 조회에서 찾은 회차 — 신청 버튼을 이 회차로 좁힌다 */
     private final Set<Long> sessionsInRange = new HashSet<>();
     private int successfulTools;
+    private boolean summaryAdded;
 
     /** 오늘 날짜·시각과 학생이 직접 쓴 숫자는 답변에 나와도 된다 */
     void allowFrom(String text) {
@@ -145,7 +146,22 @@ class AssistantEvidence {
 
     // ---------------- 도구별 근거 ----------------
 
+    /**
+     * 도구 없이 미리 넣어 둔 요약으로 답한 경우: 답변에 이름이 나온 수업만 근거 카드로 붙인다.
+     * (요약 도구를 이미 썼으면 그 근거가 있으니 건너뛴다)
+     */
+    void addSummaryMentioned(SummaryResult r, String answer) {
+        if (summaryAdded || answer == null) {
+            return;
+        }
+        List<CourseSummary> mentioned = r.courses().stream().filter(c -> answer.contains(c.title())).toList();
+        if (!mentioned.isEmpty()) {
+            addSummary(new SummaryResult(r.asOf(), r.policy(), mentioned));
+        }
+    }
+
     private void addSummary(SummaryResult r) {
+        summaryAdded = true;
         List<CourseSummary> sorted = r.courses().stream()
                 .sorted(Comparator.comparing((CourseSummary c) -> c.warningLevel() == null ? 0 : c.warningLevel().ordinal())
                         .reversed().thenComparing(CourseSummary::title))

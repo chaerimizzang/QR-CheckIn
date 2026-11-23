@@ -187,6 +187,22 @@ class AssistantServiceTest {
     }
 
     @Test
+    void 지금_출결_질문은_미리_넣은_요약으로_한_번에_답한다() throws Exception {
+        fake.script.add(text("자료구조는 F 기준까지 더 결석할 수 있는 횟수가 0회라 DANGER 단계예요."));
+        ask("{\"message\":\"자료구조 몇 번 더 빠져도 돼?\"}", kim)
+                .andExpect(status().isOk())
+                // 영어 단계 이름은 한글로, 숫자 0 은 요약에 있으므로 통과
+                .andExpect(jsonPath("$.answer").value("자료구조는 F 기준까지 더 결석할 수 있는 횟수가 0회라 위험 단계예요."))
+                // 도구를 안 썼어도 답변에 나온 수업의 요약이 근거 카드로 붙는다
+                .andExpect(jsonPath("$.facts[0].label").value("자료구조"))
+                .andExpect(jsonPath("$.actions[0].path").value("/student/courses/" + course + "?from=attendance"))
+                .andExpect(jsonPath("$.needsClarification").value(false));
+        assertThat(fake.requests).hasSize(1);
+        String system = fake.requests.get(0).get(0).path("content").asText();
+        assertThat(system).contains("\"remainingAbsences\":0").contains("몇 번 더 빠져도 돼?").doesNotContain("sprof");
+    }
+
+    @Test
     void 도구_결과에_없는_숫자는_다시_요청하고_그래도_틀리면_안전한_문장() throws Exception {
         fake.script.add(toolCall("c1", "getMyAttendanceSummary", "{}"));
         fake.script.add(text("자료구조 결석은 77회예요."));
