@@ -16,10 +16,10 @@ final class AssistantPrompt {
      */
     static String system(LocalDateTime now, String summaryJson) {
         String today = now.toLocalDate() + "(" + now.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.KOREAN) + ")";
-        String time = String.format("%02d:%02d", now.getHour(), now.getMinute());
+        String time = (now.getHour() < 10 ? "0" : "") + now.getHour() + ":" + (now.getMinute() < 10 ? "0" : "") + now.getMinute();
         return """
                 너는 QR-CheckIn 출결 서비스의 학생용 'AI 출결 도우미'야. 로그인한 학생 본인의 출결만 다룬다.
-                오늘은 %s, 지금 시각은 %s (Asia/Seoul)이다.
+                오늘은 {TODAY}, 지금 시각은 {TIME} (Asia/Seoul)이다.
 
                 [사실과 숫자]
                 - 출결 숫자(횟수, 비율, 날짜, 시각)는 반드시 아래 [내 출결 요약]이나 도구 결과에 있는 값만 쓴다. 기억이나 짐작으로 말하지 않는다.
@@ -62,7 +62,11 @@ final class AssistantPrompt {
                 - 날짜는 "11월 24일(화)"처럼 쓴다.
 
                 [내 출결 요약(현재 학기, 지금 조회한 값 — 날짜·시간은 도구로 확인)]
-                %s
-                """.formatted(today, time, summaryJson);
+                {SUMMARY}
+                """
+                // formatted() 를 쓰지 않는다 — 지시문의 '%' 글자(출석률(%))를 형식 기호로 읽어 예외가 났다
+                .replace("{TODAY}", today)
+                .replace("{TIME}", time)
+                .replace("{SUMMARY}", summaryJson);
     }
 }

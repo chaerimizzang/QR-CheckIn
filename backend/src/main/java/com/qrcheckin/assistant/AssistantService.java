@@ -96,6 +96,15 @@ public class AssistantService {
             AskResponse res = converse(user, req, now);
             log.info("[AI 도우미] 답변 완료 {}ms", (System.nanoTime() - started) / 1_000_000);
             return res;
+        } catch (ApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            // 도우미 안에서 예상 못 한 오류: '서버 오류' 대신 다시 시도 안내, 원인은 로그에 남긴다
+            log.error("[AI 도우미] 처리 중 오류", e);
+            if (preset != null) {
+                return template(preset, user, now, SOURCE_TEMPLATE);
+            }
+            throw new ApiException(ErrorCode.ASSISTANT_UNAVAILABLE);
         } catch (LlmException e) {
             log.warn("[AI 도우미] LLM 실패({}, {}ms): {}", e.kind(), (System.nanoTime() - started) / 1_000_000, e.getMessage());
             if (preset != null) {
