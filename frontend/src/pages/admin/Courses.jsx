@@ -222,7 +222,7 @@ export default function Courses() {
             </>
           )}
           <WeeklyPlanFields plans={plans} onChange={setPlans} onPendingChange={setPending} />
-          <p className="muted small">수업 시간을 넣으면 {customPeriod ? '오늘부터 끝 월까지' : `오늘부터 ${WEEKS}주차까지`} 매주 회차가 자동으로 만들어져요. 비워 두면 회차는 직접 추가해요.</p>
+          <p className="muted small">수업 시간을 넣으면 {customPeriod ? '시작 월부터 끝 월까지' : `개강일부터 ${WEEKS}주차까지`} 매주 회차가 자동으로 만들어져요(오늘 이전 날짜도 포함). 비워 두면 회차는 직접 추가해요.</p>
           <div className="btn-row">
             <button className="btn btn-primary" disabled={busy}>{busy ? '만드는 중…' : '만들기'}</button>
             <button type="button" className="btn" onClick={() => setShowForm(false)}>취소</button>

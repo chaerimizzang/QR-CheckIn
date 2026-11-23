@@ -150,8 +150,8 @@ class ScheduleTest {
     void 교육을_만들_때_요일과_시간을_고르면_회차까지_만들어진다() throws Exception {
         String prof = login("cprof@t.com", "ADMIN");
 
-        // 월·수 09:00~10:30 + 금 13:00~15:00, 11월 → 오늘(11/18)부터:
-        // 11/18 수, 11/20 금, 11/23 월, 11/25 수, 11/27 금, 11/30 월
+        // 월·수 09:00~10:30 + 금 13:00~15:00, 11월 → 오늘(11/18)이 아니라 시작일(11/1)부터:
+        // 월 11/2·9·16·23·30, 수 11/4·11·18·25, 금 11/6·13·20·27 = 13회
         String body = "{\"title\":\"자료구조\",\"startDate\":\"2026-11-01\",\"endDate\":\"2026-11-30\","
                 + "\"schedules\":[{\"days\":[\"WEDNESDAY\",\"MONDAY\"],\"startTime\":\"09:00\",\"endTime\":\"10:30\"},{\"days\":[\"FRIDAY\"],\"startTime\":\"13:00\",\"endTime\":\"15:00\"}]}";
         long c = idOf(call(post("/api/v1/courses"), prof, body)
@@ -162,10 +162,10 @@ class ScheduleTest {
                 .andExpect(jsonPath("$.schedules[2].dayOfWeek").value("FRIDAY"))
                 .andExpect(jsonPath("$.schedules[2].durationMinutes").value(120)));
         call(get("/api/v1/courses/" + c + "/sessions"), prof, null)
-                .andExpect(jsonPath("$.length()").value(6))
-                .andExpect(jsonPath("$[0].scheduledAt").value("2026-11-18T09:00:00"))
-                .andExpect(jsonPath("$[1].scheduledAt").value("2026-11-20T13:00:00"))
-                .andExpect(jsonPath("$[5].scheduledAt").value("2026-11-30T09:00:00"));
+                .andExpect(jsonPath("$.length()").value(13))
+                .andExpect(jsonPath("$[0].scheduledAt").value("2026-11-02T09:00:00"))
+                .andExpect(jsonPath("$[1].scheduledAt").value("2026-11-04T09:00:00"))
+                .andExpect(jsonPath("$[12].scheduledAt").value("2026-11-30T09:00:00"));
 
         // 다른 묶음끼리 같은 요일에 시간이 겹치면 거절
         call(post("/api/v1/courses"), prof, "{\"title\":\"겹침\",\"startDate\":\"2026-11-01\",\"endDate\":\"2026-11-30\","
