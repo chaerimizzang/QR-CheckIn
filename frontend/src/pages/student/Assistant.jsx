@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link } from 'react-router-dom'
 import { get, post } from '../../api'
+import { useAuth } from '../../auth'
+import { getAssistantState, resetAssistant, subscribeAssistant, updateAssistant } from '../../assistantStore'
 import { Layout } from '../../components/ui'
 import Icon from '../../components/Icon'
 
@@ -9,15 +11,25 @@ const HISTORY_TURNS = 6
 const STEPS = ['출결 확인 중…', '계산 중…', '답변 준비 중…']
 
 /**
- * AI 출결 도우미(학생). 대화는 이 화면에만 두고(새로고침·로그아웃 시 사라짐) 다음 질문 때 최근 6턴을 함께 보낸다.
+ * AI 출결 도우미(학생). 대화는 앱 메모리(assistantStore)에만 둬서 뒤로가기·다른 화면에 다녀와도 남고,
+ * 새로고침·탭 닫기·로그아웃하면 사라진다. 다음 질문 때 최근 6턴을 함께 보낸다.
  * 숫자는 서버가 계산한 근거 카드(facts)를 그대로 보여 주고, 버튼은 서버가 준 내부 경로만 쓴다.
  */
 export default function Assistant() {
+  const { user } = useAuth()
   const [status, setStatus] = useState(null)
-  const [messages, setMessages] = useState([]) // {role:'user', text} | {role:'assistant', reply} | {role:'error', error, retry}
+  // messages: {role:'user', text} | {role:'assistant', reply} | {role:'error', error, retry}
+  const store = useSyncExternalStore(subscribeAssistant, getAssistantState)
+  const mine = store.userId === user?.id
+  const messages = mine ? store.messages : []
+  const busy = mine && store.busy
   const [input, setInput] = useState('')
-  const [busy, setBusy] = useState(false)
   const [step, setStep] = useState(0)
+
+  // 다른 계정의 대화가 남아 있으면 비운다
+  useEffect(() => {
+    if (user && getAssistantState().userId !== user.id) resetAssistant(user.id)
+  }, [user])
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -33,25 +45,32 @@ export default function Assistant() {
     return () => clearInterval(t)
   }, [busy])
 
+  // 처음 들어왔을 때(뒤로가기 포함)는 바로, 대화가 늘어날 때는 부드럽게 맨 아래로
+  const firstScroll = useRef(true)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    bottomRef.current?.scrollIntoView({ behavior: firstScroll.current ? 'auto' : 'smooth', block: 'end' })
+    firstScroll.current = false
   }, [messages, busy])
 
   async function ask(text, preset) {
     const message = text.trim()
     if (!message || busy) return
     const history = toHistory(messages)
-    setMessages((m) => [...m.filter((x) => x.role !== 'error'), { role: 'user', text: message }])
+    const conv = getAssistantState().convId
+    updateAssistant((s) => ({ busy: true, messages: [...s.messages.filter((x) => x.role !== 'error'), { role: 'user', text: message }] }))
     setInput('')
-    setBusy(true)
+    // 화면을 떠나 있어도 응답은 store 에 쌓인다. 그사이 [새 대화]·로그아웃했으면 버린다
+    const stillSame = () => getAssistantState().convId === conv
     try {
       const reply = await post('/assistant/messages', { message, history, ...(preset ? { preset } : {}) })
-      setMessages((m) => [...m, { role: 'assistant', reply }])
+      if (stillSame()) updateAssistant((s) => ({ messages: [...s.messages, { role: 'assistant', reply }] }))
     } catch (error) {
       // 실패한 질문은 대화에서 빼고 다시 시도할 수 있게 둔다
-      setMessages((m) => [...m.slice(0, -1), { role: 'error', error, retry: { text: message, preset } }])
+      if (stillSame()) {
+        updateAssistant((s) => ({ messages: [...s.messages.slice(0, -1), { role: 'error', error, retry: { text: message, preset } }] }))
+      }
     } finally {
-      setBusy(false)
+      if (stillSame()) updateAssistant(() => ({ busy: false }))
       inputRef.current?.focus()
     }
   }
@@ -75,7 +94,7 @@ export default function Assistant() {
   return (
     <Layout back="/student" title="AI 출결 도우미"
       actions={!empty && (
-        <button type="button" className="btn btn-sm" onClick={() => setMessages([])} disabled={busy}>새 대화</button>
+        <button type="button" className="btn btn-sm" onClick={() => resetAssistant(user?.id)} disabled={busy}>새 대화</button>
       )}>
       {status && !status.available && (
         <div className="alert alert-info small">지금은 아래 추천 질문에만 답할 수 있어요.</div>
