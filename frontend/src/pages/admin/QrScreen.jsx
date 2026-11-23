@@ -52,8 +52,8 @@ export default function QrScreen() {
   return (
     <div className="qr-page">
       <div className="qr-top">
-        <Link to={`/admin/sessions/${sessionId}`} className="link-btn link-ico"><Icon name="back" size={16} /> 회차 화면</Link>
-        <button className="link-btn" onClick={fullscreen}>전체 화면</button>
+        <Link to={`/admin/sessions/${sessionId}`} className="link-btn link-ico qr-link"><Icon name="back-white" size={16} /> 회차 화면</Link>
+        <button className="link-btn qr-link" onClick={fullscreen}>전체 화면</button>
       </div>
 
       {closed ? (
@@ -67,21 +67,16 @@ export default function QrScreen() {
       ) : (
         <div className="qr-main">
           <div className="qr-box">
-            <QRCodeSVG value={url} size={1024} level="M" marginSize={2} style={{ width: '100%', height: 'auto' }} />
+            <QRCodeSVG value={url} size={1024} level="M" marginSize={2} style={{ width: '100%', height: 'auto', display: 'block' }} />
             <div className="qr-progress"><div style={{ width: `${(nextIn / qr.refreshSeconds) * 100}%` }} /></div>
           </div>
-          <div className="qr-side">
-            <div className="qr-stat">
-              <div className="muted">남은 시간</div>
-              <div className={`qr-big ${remaining < 60 ? 'warn' : ''}`}>{fmtSeconds(remaining)}</div>
-            </div>
-            <div className="qr-stat">
-              <div className="muted">출석</div>
-              <div className="qr-big">{qr.presentCount}<span className="qr-of"> / {qr.enrolledCount}</span></div>
-            </div>
-            <p className="muted small">휴대폰 카메라나 앱의 [QR 스캔]으로 찍으세요.<br />QR은 {qr.refreshSeconds}초마다 바뀌어요.</p>
-            {error && <p className="warn small">연결이 불안정해요. 다시 시도하는 중…</p>}
+          <div className="qr-line">
+            <span>자동 마감까지 <b className={remaining < 60 ? 'tone-warn' : ''}>{fmtSeconds(remaining)}</b></span>
+            <span className="qr-sep" aria-hidden="true" />
+            <span>출석 <b>{qr.presentCount}</b> / {qr.enrolledCount}</span>
           </div>
+          <p className="qr-hint">휴대폰 카메라나 앱의 [QR 스캔]으로 찍으세요 · QR은 {qr.refreshSeconds}초마다 바뀌어요</p>
+          {error && <p className="tone-warn small">연결이 불안정해요. 다시 시도하는 중…</p>}
         </div>
       )}
     </div>

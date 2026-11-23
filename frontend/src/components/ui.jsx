@@ -17,7 +17,7 @@ const MENU = {
   // 학생: 홈 · 프로필 · 시간표 · 출결 현황 · 출석 인정 · AI 도우미
   STUDENT: [{ to: '/student', label: '홈', icon: 'home', match: (p) => p === '/student' }, ...COMMON.slice(0, 2),
     { to: '/attendance', label: '출결 현황', icon: 'chart-column', match: (p) => p === '/attendance' }, ...COMMON.slice(2),
-    { to: '/assistant', label: 'AI 도우미', icon: 'sparkles', match: (p) => p === '/assistant' }],
+    { to: '/assistant', label: 'AI 출결 도우미', icon: 'sparkles', match: (p) => p === '/assistant' }],
 }
 
 function SideMenu({ open, onClose }) {
@@ -54,10 +54,10 @@ function SideMenu({ open, onClose }) {
           <div className="drawer-avatar" aria-hidden="true">{user.name?.slice(0, 1)}</div>
           <div className="drawer-who">
             <div className="drawer-name">{user.name}</div>
-            <div className="muted small">{user.role === 'ADMIN' ? '관리자' : '수강생'}</div>
+            <div className="drawer-role">{user.role === 'ADMIN' ? '관리자' : '학생'}{user.department && ` · ${user.department}`}</div>
           </div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="메뉴 닫기" tabIndex={open ? 0 : -1}>
-            <Icon name="close" size={22} />
+            <Icon name="close-white" size={22} />
           </button>
         </div>
         <div className="drawer-items">
@@ -66,7 +66,7 @@ function SideMenu({ open, onClose }) {
             return (
               <Link key={it.to} to={it.to} onClick={onClose} tabIndex={open ? 0 : -1}
                 className={`drawer-item${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined}>
-                <Icon name={active ? `${it.icon}-active` : it.icon} size={20} />
+                <Icon name={active ? `${it.icon}-white` : `${it.icon}-dim`} size={20} />
                 {it.label}
                 {showCount(it) && <span className="menu-count" aria-label={`처리할 신청 ${pending}건`}>{pending}</span>}
               </Link>
@@ -75,7 +75,7 @@ function SideMenu({ open, onClose }) {
         </div>
         <button type="button" className="drawer-item drawer-logout" tabIndex={open ? 0 : -1}
           onClick={() => { onClose(); logout(); navigate('/login') }}>
-          <Icon name="logout" size={20} />
+          <Icon name="logout-dim" size={20} />
           로그아웃
         </button>
       </nav>
@@ -83,7 +83,13 @@ function SideMenu({ open, onClose }) {
   )
 }
 
-export function Layout({ title, back, children, actions }) {
+/**
+ * 화면 틀 — 위쪽 네이비 띠(메뉴/뒤로 · 제목 · 오른쪽 버튼)와 그 아래 본문.
+ * title: 제목, subtitle: 제목 아래 작은 줄, icon: 제목 앞 아이콘 이름(흰색 PNG),
+ * hero: 네이비 띠 안 제목 아래에 넣을 내용(요약 숫자 등), overlap: 본문 첫 카드를 띠 위로 겹치게(홈)
+ * back 이 있으면 뒤로 버튼, 없으면 메뉴 버튼
+ */
+export function Layout({ title, subtitle, icon, back, children, actions, hero, overlap }) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -94,31 +100,59 @@ export function Layout({ title, back, children, actions }) {
 
   return (
     <div className="page">
-      <header className="topbar">
-        <div className="topbar-left">
-          {user && (
-            <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="메뉴 열기" aria-expanded={menuOpen}>
-              <Icon name="menu" size={22} />
-            </button>
-          )}
-          {back && (
-            <button className="icon-btn" onClick={() => navigate(back)} aria-label="뒤로">
-              <Icon name="back" size={22} />
-            </button>
-          )}
-          <Link to="/" className="brand">QR 출석</Link>
+      <header className={`navy${overlap ? ' navy-overlap' : ''}${hero ? '' : ' navy-plain'}`}>
+        <div className="navy-inner">
+          <div className="topbar">
+            <div className="topbar-left">
+              {back ? (
+                <button className="icon-btn nav-btn" onClick={() => navigate(back)} aria-label="뒤로">
+                  <Icon name="back-white" size={22} />
+                </button>
+              ) : user && (
+                <button className="icon-btn nav-btn" onClick={() => setMenuOpen(true)} aria-label="메뉴 열기" aria-expanded={menuOpen}>
+                  <Icon name="menu-white" size={22} />
+                </button>
+              )}
+              {title ? (
+                <div className="topbar-title">
+                  <h1>{icon && <Icon name={icon} size={20} />}{title}</h1>
+                  {subtitle && <div className="topbar-sub">{subtitle}</div>}
+                </div>
+              ) : (
+                <Link to="/" className="brand">QR 출석</Link>
+              )}
+            </div>
+            {actions && <div className="topbar-right">{actions}</div>}
+          </div>
+          {hero && <div className="hero">{hero}</div>}
         </div>
       </header>
       <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-      <main className="content">
-        {(title || actions) && (
-          <div className="page-head">
-            {title && <h1>{title}</h1>}
-            {actions}
-          </div>
-        )}
+      <main className={`content${overlap ? ' content-overlap' : ''}`}>
         {children}
       </main>
+    </div>
+  )
+}
+
+/** 네이비 띠 안 숫자 칸(출석·지각·결석 등) */
+export function HeroStats({ items }) {
+  return (
+    <div className="hero-stats" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+      {items.map((it) => (
+        <div key={it.label}><b className={it.tone ? `tone-${it.tone}` : undefined}>{it.value}</b><span>{it.label}</span></div>
+      ))}
+    </div>
+  )
+}
+
+/** 네이비 띠 안 칸(평균 출석률 등) */
+export function HeroTiles({ items }) {
+  return (
+    <div className="hero-tiles" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+      {items.map((it) => (
+        <div key={it.label} className="hero-tile"><span>{it.label}</span><b className={it.tone ? `tone-${it.tone}` : undefined}>{it.value}</b></div>
+      ))}
     </div>
   )
 }
@@ -134,7 +168,7 @@ export function ErrorBox({ error }) {
 }
 
 export function StatusBadge({ status }) {
-  if (!status) return <span className="badge badge-none">미정</span>
+  if (!status) return <span className="badge badge-none">미출석</span>
   return <span className={`badge badge-${status.toLowerCase()}`}>{STATUS_LABEL[status]}</span>
 }
 

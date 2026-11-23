@@ -11,6 +11,7 @@ import com.qrcheckin.common.ErrorCode;
 import com.qrcheckin.course.CourseDtos.CourseRequest;
 import com.qrcheckin.course.CourseDtos.CourseResponse;
 import com.qrcheckin.course.CourseService;
+import com.qrcheckin.schedule.ScheduleDtos.GenerateRequest;
 import com.qrcheckin.schedule.ScheduleDtos.ScheduleRequest;
 import com.qrcheckin.schedule.ScheduleDtos.ScheduleSlot;
 import com.qrcheckin.schedule.ScheduleDtos.WeeklyPlan;
@@ -50,7 +51,9 @@ public class CourseSetupService {
         // 묶음들을 요일별 칸으로 펼쳐서 저장 — 같은 요일에 시간이 겹치면 replace 에서 거절(전부 취소)
         List<ScheduleSlot> slots = plans.stream().flatMap(p -> p.toSlots().stream()).toList();
         scheduleService.replace(created.id(), new ScheduleRequest(slots), admin);
-        scheduleService.generate(created.id(), null, admin);
+        // 교육을 만들 때는 오늘이 아니라 교육 시작일(개강일)부터 만든다 — 학기 중간에 만들어도 지난 주 회차까지 있어야
+        // 전체 회차(F 기준)가 학기 기준과 맞다. 지난 회차는 '예정'으로 남고 출결 확정 때 정리한다(ATT-16)
+        scheduleService.generate(created.id(), new GenerateRequest(req.startDate(), req.endDate()), admin);
         return courseService.get(created.id(), admin); // 시간표가 들어간 최신 상태
     }
 }

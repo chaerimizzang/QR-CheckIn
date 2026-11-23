@@ -92,7 +92,7 @@ export default function Assistant() {
   const empty = messages.length === 0
 
   return (
-    <Layout back="/student" title="AI 출결 도우미"
+    <Layout back="/student" title="AI 출결 도우미" icon="sparkles-light"
       actions={!empty && (
         <button type="button" className="btn btn-sm" onClick={() => resetAssistant(user?.id)} disabled={busy}>새 대화</button>
       )}>

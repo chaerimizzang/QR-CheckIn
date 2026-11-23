@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post, put } from '../../api'
-import { ErrorBox, Layout, Loading, SessionBadge, StatusBadge } from '../../components/ui'
+import { ErrorBox, HeroStats, Layout, Loading, SessionBadge, StatusBadge } from '../../components/ui'
 import { POOR_ACCURACY_M, STATUS_LABEL, fmtDateTime, fmtTime, getPosition } from '../../util'
 import Icon from '../../components/Icon'
 
@@ -246,7 +246,15 @@ export default function SessionDetail() {
     ? 0 : Math.round((roster.summary.absent / total) * 100)
 
   return (
-    <Layout back={`/admin/courses/${s.courseId}`} title={<>{s.sessionNo}회차 <SessionBadge status={s.status} /></>}>
+    <Layout back={`/admin/courses/${s.courseId}`} title={<>{fmtDateTime(s.scheduledAt)} <SessionBadge status={s.status} /></>}
+      hero={roster && s.status !== 'SCHEDULED' && s.status !== 'CANCELED' && (
+        <HeroStats items={[
+          { label: '출석', value: roster.summary.present },
+          { label: '지각', value: roster.summary.late, tone: roster.summary.late ? 'warn' : undefined },
+          { label: '결석', value: roster.summary.absent },
+          { label: '미출석', value: roster.summary.pending },
+        ]} />
+      )}>
       <ErrorBox error={error} />
       {notice && <div className="alert alert-ok">{notice}</div>}
 
@@ -373,7 +381,7 @@ export default function SessionDetail() {
             <span> 출석 <b>{roster.summary.present}</b> ({presentRate}%)</span>
             <span> 지각 <b>{roster.summary.late}</b> ({lateRate}%) </span>
             <span> 결석 <b>{roster.summary.absent}</b> ({absentRate}%) </span>
-            <span> 미정 <b>{roster.summary.pending}</b> </span>
+            <span> 미출석 <b>{roster.summary.pending}</b> </span>
             <span className="muted">/ 전체 {total}명 </span>
           </div>
             {/* 학생 검색 */}

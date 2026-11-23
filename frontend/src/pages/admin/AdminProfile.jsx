@@ -13,17 +13,18 @@ export default function AdminProfile() {
   useEffect(() => { get('/me/admin-profile').then(setData).catch(setError) }, [])
 
   return (
-    <Layout back="/admin" title="프로필">
+    <Layout back="/admin" title="프로필" hero={data && (
+      <div className="profile-hero">
+        <div className="avatar" aria-hidden="true">{data.name?.slice(0, 1)}</div>
+        <div style={{ minWidth: 0 }}>
+          <div className="name">{data.name}</div>
+          <div className="meta">교수{data.department && ` · ${data.department}`}</div>
+        </div>
+      </div>
+    )}>
       <ErrorBox error={error} />
       {!data ? (!error && <Loading />) : (
         <>
-          <div className="card profile-card">
-            <div className="profile-avatar" aria-hidden="true">{data.name?.slice(0, 1)}</div>
-            <div className="profile-info">
-              <div className="profile-name">{data.name}</div>
-              <div className="muted small">관리자{data.department && ` · ${data.department}`} · {data.email}</div>
-            </div>
-          </div>
 
           <AccountCard name={data.name} email={data.email} department={data.department}
             onNameChange={(name) => setData({ ...data, name })}
