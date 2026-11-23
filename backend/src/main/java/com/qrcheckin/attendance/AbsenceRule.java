@@ -21,7 +21,15 @@ public final class AbsenceRule {
     public record Status(int plannedSessions, int allowedAbsences, Integer remaining, Level level) {
     }
 
+    /** 지각 몇 번이 결석 1번이 되는지 */
+    public static final int LATES_PER_ABSENCE = 3;
+
     private AbsenceRule() {
+    }
+
+    /** 인정 결석 = 결석 + 지각 3회당 1회(출석률·경고·AI 도우미 가정 계산이 모두 이 식을 쓴다) */
+    public static long convertedAbsences(long absent, long late) {
+        return absent + late / LATES_PER_ABSENCE;
     }
 
     public static Status of(int plannedSessions, long convertedAbsences, double failRatio) {
