@@ -2,6 +2,8 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './auth'
+// 글꼴: Pretendard(OFL) — 화면에 나온 글자 부분만 나눠 받는 dynamic-subset
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './styles.css'
 
 // D-20 앱처럼 설치: 서비스 워커 등록(빌드된 화면에서만. 개발 서버에서는 캐시가 헷갈리게 하지 않도록 끔)

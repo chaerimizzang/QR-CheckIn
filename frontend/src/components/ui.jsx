@@ -100,7 +100,7 @@ export function Layout({ title, subtitle, icon, back, children, actions, hero, o
 
   return (
     <div className="page">
-      <header className={`navy${overlap ? ' navy-overlap' : ''}`}>
+      <header className={`navy${overlap ? ' navy-overlap' : ''}${hero ? '' : ' navy-plain'}`}>
         <div className="navy-inner">
           <div className="topbar">
             <div className="topbar-left">
