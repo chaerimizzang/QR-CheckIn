@@ -523,3 +523,11 @@ a.list-item:hover { border-color: #c9d3e6; }
 .tt-block { background: #e8f0fe; color: var(--navy); border-left: 3px solid var(--primary); }
 .tt-block:hover { background: #d6e4fd; }
 .tt-block .tt-time { color: #3d5a99; }
+/* 교수 홈: 오늘 수업 여러 개 */
+.today-card { padding: 4px 18px; gap: 0; }
+.today-card > .muted { padding: 16px 0; }
+.today-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
+.today-row:first-child { border-top: none; }
+.today-row .btn-sm { padding: 8px 12px; }
+.quick .menu-count { margin-left: 0; }
+.course-card .sub-warn { white-space: nowrap; }
