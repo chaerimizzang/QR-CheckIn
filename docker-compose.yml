@@ -44,6 +44,10 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:?.env 에 JWT_SECRET 를 넣어 주세요}
       QR_SECRET: ${QR_SECRET:?.env 에 QR_SECRET 를 넣어 주세요}
+      # AI 출결 도우미(선택) — 비어 있으면 도우미만 꺼진다
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
       TZ: Asia/Seoul
     ports:
       - "8080:8080"

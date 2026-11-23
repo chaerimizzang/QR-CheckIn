@@ -24,7 +24,7 @@ class SpaRouteTest {
 
     @Test
     void 화면_주소는_index_html로_보낸다() throws Exception {
-        for (String path : new String[] {"/profile", "/timetable", "/requests", "/attendance", "/me/password", "/admin", "/student", "/scan"}) {
+        for (String path : new String[] {"/profile", "/timetable", "/requests", "/attendance", "/assistant", "/me/password", "/admin", "/student", "/scan"}) {
             mvc.perform(get(path)).andExpect(status().isOk()).andExpect(forwardedUrl("/index.html"));
         }
     }

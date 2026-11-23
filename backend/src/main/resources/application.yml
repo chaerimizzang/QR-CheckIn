@@ -71,6 +71,25 @@ app:
     subject: ${PUSH_SUBJECT:mailto:qr-checkin@example.com}
     vapid-public-key: ${VAPID_PUBLIC_KEY:}
     vapid-private-key: ${VAPID_PRIVATE_KEY:}
+  assistant:
+    # AI 출결 도우미(학생용). OpenAI 호환 /chat/completions 를 쓰는 무료 등급 LLM — 루트 .env 의 LLM_* 를 읽는다
+    #   Gemini: https://generativelanguage.googleapis.com/v1beta/openai   Groq: https://api.groq.com/openai/v1
+    # 셋 중 하나라도 비어 있으면 도우미는 '사용할 수 없음'(추천 질문은 서버 템플릿 답변으로만)
+    base-url: ${LLM_BASE_URL:}
+    model: ${LLM_MODEL:}
+    api-key: ${LLM_API_KEY:}
+    timeout-seconds: 25
+    # Gemini 가 답하기 전에 생각하는 양(low·medium·high). low 가 가장 빠르다. 비우면 모델 기본값
+    reasoning-effort: low
+    # 추천 질문 버튼은 LLM 을 거치지 않고 서버가 바로 답한다(빠르고 숫자가 정확). false 면 추천 질문도 AI 가 답함
+    preset-direct: true
+    # 질문 하나에서 도구를 부를 수 있는 최대 횟수
+    max-tool-calls: 6
+    # 학생 한 명당 호출 제한(무료 한도를 넘지 않게)
+    per-minute-limit: 6
+    daily-limit: 40
+    # 서버가 켜질 때 짧은 요청으로 키·모델이 맞는지 로그에 알려 줌
+    startup-check: true
 
 springdoc:
   swagger-ui:
