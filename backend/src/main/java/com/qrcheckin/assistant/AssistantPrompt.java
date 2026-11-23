@@ -10,7 +10,8 @@ final class AssistantPrompt {
     private AssistantPrompt() {
     }
 
-    static String system(LocalDateTime now) {
+    /** @param coursesJson 현재 학기 내 수업 목록(courseId·이름·주간 시간표) — 미리 넣어 도구 왕복을 줄인다 */
+    static String system(LocalDateTime now, String coursesJson) {
         String today = now.toLocalDate() + "(" + now.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.KOREAN) + ")";
         String time = String.format("%02d:%02d", now.getHour(), now.getMinute());
         return """
@@ -25,7 +26,8 @@ final class AssistantPrompt {
                 - 출석률은 끝난(마감된) 회차 기준이고, F 기준은 앞으로 남은 회차까지 포함한 전체 회차 기준이다. 섞어서 말하지 않는다.
 
                 [도구 쓰는 법]
-                - 수업 이름이 나오면 getMyCourses 로 courseId 를 찾는다. 후보가 없거나 여러 개면 수업 이름을 되묻는다.
+                - 수업 이름이 나오면 아래 [내 수업 목록]에서 courseId 를 찾는다(getMyCourses 는 지난 학기 수업이 필요할 때만). 후보가 없거나 여러 개면 수업 이름을 되묻는다.
+                - 필요한 도구가 여러 개면 한 번에 함께 요청한다(예: 수업별 getMyRequestOptions 를 동시에).
                 - "이번 주", "다음 주", "모레" 같은 날짜는 오늘 기준 실제 날짜(YYYY-MM-DD)로 바꿔 getMyUpcomingSessions 에 넣는다. 한 주는 월요일~일요일이다. 날짜를 정할 수 없으면 되묻는다.
                 - 예비군·병원 등으로 빠지는 날의 신청 안내는 getMyUpcomingSessions 로 그날 수업을 찾고, 수업마다 getMyRequestOptions 로 신청 가능 여부를 확인한다.
                 - "지각 한 번", "한 번 빠지면"처럼 지각인지 결석인지, 몇 번인지 모호하면 되묻는다.
@@ -40,6 +42,9 @@ final class AssistantPrompt {
                 - 한국어 존댓말, 2~4문장. 핵심 결론을 먼저 말한다.
                 - 마크다운, 표, 목록 기호, 이모지, URL 을 쓰지 않는다. 이동 버튼과 근거 카드는 화면이 따로 보여 준다.
                 - 날짜는 "11월 24일(화)"처럼 쓴다.
-                """.formatted(today, time);
+
+                [내 수업 목록(현재 학기)]
+                %s
+                """.formatted(today, time, coursesJson);
     }
 }

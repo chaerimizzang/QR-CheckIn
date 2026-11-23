@@ -40,6 +40,8 @@ public class AssistantService {
 
     static final String SOURCE_AI = "AI";
     static final String SOURCE_TEMPLATE = "TEMPLATE";
+    /** 추천 질문을 LLM 없이 서버가 바로 답함(preset-direct) */
+    static final String SOURCE_PRESET = "PRESET";
     static final String SAFE_FALLBACK = "숫자를 정확히 설명하지 못했어요. 서버에서 계산한 정확한 값은 아래 근거 카드를 봐 주세요.";
 
     private final LlmClient llm;
@@ -50,10 +52,12 @@ public class AssistantService {
     private final ObjectMapper om;
     private final Clock clock;
     private final int maxToolCalls;
+    private final boolean presetDirect;
 
     public AssistantService(LlmClient llm, AssistantToolExecutor executor, AssistantTemplates templates,
                             AssistantTools tools, AssistantRateLimiter limiter, ObjectMapper om, Clock clock,
-                            @Value("${app.assistant.max-tool-calls:6}") int maxToolCalls) {
+                            @Value("${app.assistant.max-tool-calls:6}") int maxToolCalls,
+                            @Value("${app.assistant.preset-direct:true}") boolean presetDirect) {
         this.llm = llm;
         this.executor = executor;
         this.templates = templates;
@@ -62,6 +66,7 @@ public class AssistantService {
         this.om = om;
         this.clock = clock;
         this.maxToolCalls = maxToolCalls;
+        this.presetDirect = presetDirect;
     }
 
     public StatusResponse status() {
@@ -73,19 +78,26 @@ public class AssistantService {
         LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.SECONDS);
         PresetId preset = PresetId.find(req.preset());
 
+        // 추천 질문은 정해진 질문이라 서버가 바로 답한다(LLM 왕복 없이 1초 안에)
+        if (preset != null && presetDirect) {
+            return template(preset, user, now, SOURCE_PRESET);
+        }
         if (!llm.configured()) {
             if (preset != null) {
-                return template(preset, user, now);
+                return template(preset, user, now, SOURCE_TEMPLATE);
             }
             throw new ApiException(ErrorCode.ASSISTANT_UNAVAILABLE,
                     "AI 도우미가 아직 설정되지 않았어요. 추천 질문은 지금도 쓸 수 있어요");
         }
+        long started = System.nanoTime();
         try {
-            return converse(user, req, now);
+            AskResponse res = converse(user, req, now);
+            log.info("[AI 도우미] 답변 완료 {}ms", (System.nanoTime() - started) / 1_000_000);
+            return res;
         } catch (LlmException e) {
-            log.warn("[AI 도우미] LLM 실패({}): {}", e.kind(), e.getMessage());
+            log.warn("[AI 도우미] LLM 실패({}, {}ms): {}", e.kind(), (System.nanoTime() - started) / 1_000_000, e.getMessage());
             if (preset != null) {
-                return template(preset, user, now);
+                return template(preset, user, now, SOURCE_TEMPLATE);
             }
             throw new ApiException(ErrorCode.ASSISTANT_UNAVAILABLE, e.kind() == LlmException.Kind.RATE_LIMITED
                     ? "오늘 AI 무료 사용량을 다 써서 답하기 어려워요. 추천 질문은 지금도 쓸 수 있어요"
@@ -93,10 +105,10 @@ public class AssistantService {
         }
     }
 
-    private AskResponse template(PresetId preset, AuthUser user, LocalDateTime now) {
+    private AskResponse template(PresetId preset, AuthUser user, LocalDateTime now, String source) {
         AssistantEvidence ev = new AssistantEvidence();
         String answer = templates.answer(preset, user, ev, now.toLocalDate());
-        return new AskResponse(answer, SOURCE_TEMPLATE, false, ev.facts(), ev.actions(), now, tools.policy());
+        return new AskResponse(answer, source, false, ev.facts(), ev.actions(), now, tools.policy());
     }
 
     private AskResponse converse(AuthUser user, AskRequest req, LocalDateTime now) throws LlmException {
@@ -104,8 +116,17 @@ public class AssistantService {
         ev.allowDate(now);
         ev.allowFrom(req.message());
 
+        // 내 수업 목록을 처음부터 넣어 두면 "자료구조에서…" 같은 질문에서 getMyCourses 왕복 한 번이 줄어든다
+        String coursesJson;
+        try {
+            coursesJson = om.writeValueAsString(tools.myCourses(user, false).courses());
+        } catch (JsonProcessingException e) {
+            coursesJson = "[]";
+        }
+        ev.allowFrom(coursesJson);
+
         ArrayNode messages = om.createArrayNode();
-        messages.add(message("system", AssistantPrompt.system(now)));
+        messages.add(message("system", AssistantPrompt.system(now, coursesJson)));
         List<Turn> history = req.history() == null ? List.of() : req.history();
         for (Turn t : history) {
             messages.add(message(t.role(), t.text()));

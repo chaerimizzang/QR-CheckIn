@@ -214,6 +214,19 @@ class AssistantToolsTest {
         mvc.perform(get(TOOLS + "/attendance-summary")).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void 추천_질문은_LLM_없이_서버가_바로_답한다() throws Exception {
+        // 이 테스트 설정에는 LLM 키가 없지만 추천 질문(preset-direct)은 바로 답한다
+        call(post("/api/v1/assistant/messages"), kim, "{\"message\":\"위험한 수업?\",\"preset\":\"RISK\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value("PRESET"))
+                .andExpect(jsonPath("$.answer").value(Matchers.containsString("자료구조(위험, 남은 결석 0회)")))
+                .andExpect(jsonPath("$.facts[0].label").value("자료구조"));
+        // 추천 질문이 아니면 키가 없어서 503
+        call(post("/api/v1/assistant/messages"), kim, "{\"message\":\"아무 질문\"}")
+                .andExpect(status().isServiceUnavailable());
+    }
+
     // ---------------- 준비 ----------------
 
     private long createSession(String at) throws Exception {

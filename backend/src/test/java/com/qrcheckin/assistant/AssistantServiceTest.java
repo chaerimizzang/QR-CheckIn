@@ -54,6 +54,7 @@ import com.qrcheckin.support.MutableClock;
         "app.push.check-ms=3600000",
         "app.attendance.warning-check-ms=3600000",
         "app.assistant.startup-check=false",
+        "app.assistant.preset-direct=false",
         "app.assistant.max-tool-calls=6",
         "app.assistant.per-minute-limit=5",
         "app.assistant.daily-limit=100"
