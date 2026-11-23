@@ -534,3 +534,10 @@ a.list-item:hover { border-color: #c9d3e6; }
 /* 제목만 있는 화면: 네이비 띠 높이 64px(내용이 있는 띠는 그대로) */
 .navy-plain .navy-inner { padding-bottom: 0; }
 .navy-plain .topbar { min-height: 64px; padding-top: 0; }
+/* 아이폰: 상태 표시줄(시계·배터리)까지 네이비로 — 위쪽 안전 영역만큼 띄운다 */
+.qr-page { padding-top: env(safe-area-inset-top); }
+.auth-wrap { padding-top: calc(16px + env(safe-area-inset-top)); }
+/* 위쪽 띠의 주 버튼(+ 교육 만들기)은 흰 덩어리 대신 반투명 알약 */
+.topbar-right .btn, .topbar-right .btn-primary { background: rgba(255, 255, 255, .12); border-color: transparent; color: #fff; padding: 8px 14px; font-size: .9rem; border-radius: 999px; }
+.topbar-right .btn:hover, .topbar-right .btn-primary:hover { background: rgba(255, 255, 255, .2); }
+select.input { color: var(--text); -webkit-text-fill-color: var(--text); }
