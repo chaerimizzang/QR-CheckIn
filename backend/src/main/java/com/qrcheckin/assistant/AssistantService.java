@@ -19,6 +19,7 @@ import com.qrcheckin.assistant.AssistantChatDtos.AskRequest;
 import com.qrcheckin.assistant.AssistantChatDtos.AskResponse;
 import com.qrcheckin.assistant.AssistantChatDtos.StatusResponse;
 import com.qrcheckin.assistant.AssistantChatDtos.Turn;
+import com.qrcheckin.assistant.AssistantDtos.SummaryResult;
 import com.qrcheckin.assistant.AssistantTemplates.PresetId;
 import com.qrcheckin.assistant.llm.LlmClient;
 import com.qrcheckin.assistant.llm.LlmException;
@@ -127,20 +128,21 @@ public class AssistantService {
         ev.allowDate(now);
         ev.allowFrom(req.message());
 
-        // 내 수업 목록(courseId·이름·학기)을 처음부터 넣어 두면 "자료구조에서…" 같은 질문에서 왕복 한 번이 줄어든다.
-        // 주간 시간표는 넣지 않는다 — 특정 날짜에 수업이 있는지는 getMyUpcomingSessions 로 실제 회차를 확인하게
-        String coursesJson;
+        // 현재 학기 출결 요약을 처음부터 넣어 두면 "출석률 몇이야?", "몇 번 더 빠져도 돼?" 같은 질문은
+        // 도구 없이 LLM 한 번에 답한다. 이름·학번·이메일·교수 이름은 넣지 않는다
+        SummaryResult summary = tools.attendanceSummary(user, null, false);
+        String summaryJson;
         try {
-            ArrayNode courses = om.valueToTree(tools.myCourses(user, false).courses());
-            courses.forEach(c -> ((ObjectNode) c).remove("schedules"));
-            coursesJson = om.writeValueAsString(courses);
+            ArrayNode courses = om.valueToTree(summary.courses());
+            courses.forEach(c -> ((ObjectNode) c).remove(List.of("ownerName", "semesterKey", "semesterLabel")));
+            summaryJson = om.writeValueAsString(courses);
         } catch (JsonProcessingException | IllegalArgumentException e) {
-            coursesJson = "[]";
+            summaryJson = "[]";
         }
-        ev.allowFrom(coursesJson);
+        ev.allowFrom(summaryJson);
 
         ArrayNode messages = om.createArrayNode();
-        messages.add(message("system", AssistantPrompt.system(now, coursesJson)));
+        messages.add(message("system", AssistantPrompt.system(now, summaryJson)));
         List<Turn> history = req.history() == null ? List.of() : req.history();
         for (Turn t : history) {
             messages.add(message(t.role(), t.text()));
@@ -168,7 +170,9 @@ public class AssistantService {
         }
 
         answer = clean(answer);
-        boolean clarification = ev.successfulTools() == 0 && answer.contains("?");
+        // 도구 없이 요약으로 답했으면, 답변에 나온 수업의 요약을 근거 카드로 붙인다
+        ev.addSummaryMentioned(summary, answer);
+        boolean clarification = ev.facts().isEmpty() && answer.contains("?");
         return new AskResponse(answer, SOURCE_AI, clarification, ev.facts(), ev.actions(), now, tools.policy());
     }
 
@@ -255,8 +259,13 @@ public class AssistantService {
         return "";
     }
 
-    /** 지시해도 가끔 붙는 마크다운 굵게 표시 등을 걷어 낸다 */
+    /** 지시해도 가끔 붙는 마크다운 굵게 표시, 영어 경고 단계 이름 등을 걷어 낸다 */
     static String clean(String s) {
-        return s.replace("**", "").replace("__", "").replaceAll("(?m)^#+\\s*", "").trim();
+        return s.replace("**", "").replace("__", "").replaceAll("(?m)^#+\\s*", "")
+                .replaceAll("\\bFAIL\\b", "F 기준 초과")
+                .replaceAll("\\bDANGER\\b", "위험")
+                .replaceAll("\\bWARNING\\b", "주의")
+                .replaceAll("\\bSAFE\\b", "안전")
+                .trim();
     }
 }
