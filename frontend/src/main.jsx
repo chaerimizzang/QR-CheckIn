@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './auth'
 import './styles.css'
+import fontUrl from './fonts/PretendardVariable.subset.woff2?url'
 
 // D-20 앱처럼 설치: 서비스 워커 등록(빌드된 화면에서만. 개발 서버에서는 캐시가 헷갈리게 하지 않도록 끔)
 // 브라우저가 '설치 가능'을 알려 주는 이벤트는 화면보다 먼저 올 수 있어 여기서 잡아 둔다(InstallPrompt 가 사용)
@@ -36,3 +37,22 @@ createRoot(document.getElementById('root')).render(
     </AuthProvider>
   </BrowserRouter>,
 )
+
+// 글꼴: Pretendard Variable(SIL OFL 1.1, src/fonts/Pretendard-LICENSE.txt) — 자주 쓰는 한글 2,350자+영문만 남긴 파일 하나(약 630KB).
+// Funnel 처럼 느린 연결에서는 이 파일이 화면 코드·API 와 대역폭을 나눠 쓰면 첫 화면이 늦어진다 →
+// 처음에는 기본 글꼴로 먼저 보여 주고, 화면이 다 뜬 뒤 받아서 바꾼다. 한 번 받으면 브라우저에 1년 남아서 다음부터는 바로 쓴다
+function loadFont(delay) {
+  setTimeout(() => {
+    if (typeof FontFace === 'undefined') return
+    const face = new FontFace('Pretendard Variable', `url(${fontUrl}) format('woff2-variations'), url(${fontUrl}) format('woff2')`,
+      { weight: '45 920', style: 'normal', display: 'swap' })
+    face.load().then((f) => {
+      document.fonts.add(f)
+      try { localStorage.setItem('qr-font', fontUrl) } catch { /* 저장 못 해도 괜찮다 */ }
+    }).catch(() => {})
+  }, delay)
+}
+let cached = false
+try { cached = localStorage.getItem('qr-font') === fontUrl } catch { /* 무시 */ }
+if (cached) loadFont(0) // 이미 받아 둔 글꼴이면 바로
+else window.addEventListener('load', () => loadFont(1500))
