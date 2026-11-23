@@ -38,6 +38,10 @@ public class Course {
     @Column(nullable = false, length = 100)
     private String title;
 
+    /** 강의실(선택, 예: 공학관 302호) — 화면 표시용 */
+    @Column(length = 50)
+    private String room;
+
     @Column(name = "start_date")
     private LocalDate startDate;
 
@@ -70,6 +74,13 @@ public class Course {
         this.title = title;
         this.startDate = startDate;
         this.endDate = endDate;
+    }
+
+    public String getRoom() { return room; }
+
+    /** 강의실 — 비우면 null */
+    public void changeRoom(String room) {
+        this.room = (room == null || room.isBlank()) ? null : room.trim();
     }
 
     public void setSemester(Semester semester) {

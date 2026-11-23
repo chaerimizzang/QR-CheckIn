@@ -62,9 +62,10 @@ export default function Timetable() {
                   {blocks.filter((b) => b.slot.dayOfWeek === d).map((b, i) => (
                     <Link key={i} to={linkOf(b.course)} className="tt-block"
                       style={{ top: top(b.start), height: Math.max(top(b.end) - top(b.start) - 2, 18) }}
-                      title={`${b.course.title} · ${fmtSlot(b.slot)}`}>
+                      title={`${b.course.title} · ${fmtSlot(b.slot)}${b.course.room ? ` · ${b.course.room}` : ''}`}>
                       <span className="tt-title">{b.course.title}</span>
                       <span className="tt-time">{b.slot.startTime}–{fromMinutes(b.end)}</span>
+                      {b.course.room && <span className="tt-time">{b.course.room}</span>}
                     </Link>
                   ))}
                 </div>

@@ -7,7 +7,9 @@ public record StudentProfileResponse(
         String name,
         String studentNo,
         String email,
-        List<CourseSummary> courses) {
+        List<CourseSummary> courses,
+        /** 학과(없으면 null) */
+        String department) {
 
     /**
      * @param totalSessions     마감된 회차 수(출석률 계산 기준)

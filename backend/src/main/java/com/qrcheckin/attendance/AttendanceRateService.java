@@ -33,7 +33,7 @@ public class AttendanceRateService {
             EnrollmentRepository enrollmentRepository,
             ClassSessionRepository sessionRepository,
             AttendanceRepository attendanceRepository,
-            @Value("${app.attendance.fail-ratio:0.25}") double failRatio) {
+            @Value("${app.attendance.fail-ratio:0.3333333333}") double failRatio) {
 
         this.failRatio = failRatio;
 
@@ -147,7 +147,7 @@ public class AttendanceRateService {
         // 지각 3회 = 결석 1회
         long convertedAbsences = AbsenceRule.convertedAbsences(absent, late);
 
-        // F 기준(결석이 전체 수업의 1/4 초과) 경고
+        // F 기준(결석이 전체 수업의 1/3 초과 = 2/3 이상 출석 못 함) 경고
         AbsenceRule.Status warning = AbsenceRule.of(plannedSessions, convertedAbsences, failRatio);
 
         // 출석률 계산

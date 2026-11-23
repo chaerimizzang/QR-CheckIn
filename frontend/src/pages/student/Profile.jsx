@@ -20,12 +20,14 @@ export default function StudentProfile() {
             <div className="profile-info">
               <div className="profile-name">{data.name}</div>
               <div className="muted small">
-                {data.studentNo ? `학번 ${data.studentNo}` : '학번 미입력'} · {data.email}
+                {data.department && `${data.department} · `}{data.studentNo ? `학번 ${data.studentNo}` : '학번 미입력'} · {data.email}
               </div>
             </div>
           </div>
 
-          <AccountCard name={data.name} email={data.email} onNameChange={(name) => setData({ ...data, name })} />
+          <AccountCard name={data.name} email={data.email} department={data.department}
+            onNameChange={(name) => setData({ ...data, name })}
+            onDepartmentChange={(department) => setData({ ...data, department })} />
           <PushCard />
         </>
       )}

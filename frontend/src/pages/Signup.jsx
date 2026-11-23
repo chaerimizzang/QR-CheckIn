@@ -9,7 +9,7 @@ export default function Signup() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const next = params.get('next')
-  const [form, setForm] = useState({ email: '', password: '', name: '', studentNo: '', role: 'STUDENT' })
+  const [form, setForm] = useState({ email: '', password: '', name: '', studentNo: '', department: '', role: 'STUDENT' })
   const [agree, setAgree] = useState(false)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -52,6 +52,10 @@ export default function Signup() {
             <input value={form.studentNo} onChange={set('studentNo')} maxLength={30} inputMode="numeric" />
           </label>
         )}
+        <label>
+          학과 <span className="muted small">(선택)</span>
+          <input value={form.department} onChange={set('department')} maxLength={50} placeholder="예: 컴퓨터인공지능공학과" />
+        </label>
         <label>
           이메일
           <input type="email" value={form.email} onChange={set('email')} autoComplete="email" required />

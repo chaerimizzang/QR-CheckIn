@@ -31,6 +31,10 @@ public class User {
     @Column(name = "student_no", length = 30)
     private String studentNo;
 
+    /** 학과(선택) — 화면 표시용 */
+    @Column(length = 50)
+    private String department;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Role role;
@@ -58,6 +62,10 @@ public class User {
     /** 이름 변경(프로필) */
     public void changeName(String name) { this.name = name; }
     public String getStudentNo() { return studentNo; }
+    public String getDepartment() { return department; }
+
+    /** 학과 변경(프로필, 가입) — 비우면 null */
+    public void changeDepartment(String department) { this.department = department; }
     public Role getRole() { return role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

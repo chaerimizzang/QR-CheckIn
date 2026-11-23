@@ -70,6 +70,7 @@ public class CourseService {
         validateDates(req);
         Course course = new Course(userRepository.getReferenceById(user.id()), req.title().trim(),
                 req.startDate(), req.endDate());
+        course.changeRoom(req.room());
         course.setSemester(semesterOf(req, null));
         return toResponse(courseRepository.save(course));
     }
@@ -80,6 +81,7 @@ public class CourseService {
         Course course = getOwnedCourse(courseId, user);
         course.requireEditable();
         course.update(req.title().trim(), req.startDate(), req.endDate());
+        course.changeRoom(req.room());
         course.setSemester(semesterOf(req, course.getSemester()));
         return toResponse(course);
     }
