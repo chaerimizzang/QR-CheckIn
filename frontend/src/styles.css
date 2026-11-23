@@ -1,3 +1,13 @@
+/* 글꼴: Pretendard Variable(SIL OFL 1.1, src/fonts/Pretendard-LICENSE.txt)
+   자주 쓰는 한글 2,350자 + 영문·숫자·기호만 남긴 파일 하나(약 630KB, 모든 굵기).
+   조각 90여 개를 따로 받던 방식보다 요청이 적어 느린 연결(Funnel·핫스팟)에서 빠르다. 없는 글자는 기본 글꼴로 */
+@font-face {
+  font-family: 'Pretendard Variable';
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url('./fonts/PretendardVariable.subset.woff2') format('woff2-variations');
+}
 :root {
   --bg: #eef1f6;
   --card: #fff;
@@ -541,3 +551,20 @@ a.list-item:hover { border-color: #c9d3e6; }
 .topbar-right .btn, .topbar-right .btn-primary { background: rgba(255, 255, 255, .12); border-color: transparent; color: #fff; padding: 8px 14px; font-size: .9rem; border-radius: 999px; }
 .topbar-right .btn:hover, .topbar-right .btn-primary:hover { background: rgba(255, 255, 255, .2); }
 select.input { color: var(--text); -webkit-text-fill-color: var(--text); }
+
+/* 주차별 목록(학생 내 출결·교수 수업 날짜) */
+.week-list { display: flex; flex-direction: column; gap: 14px; }
+.week-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 2px 8px; }
+.week-head h3 { margin: 0; font-size: .95rem; font-weight: 800; display: flex; align-items: center; }
+.week-now { font-size: .7rem; font-weight: 700; color: #fff; background: var(--primary); border-radius: 999px; padding: 2px 8px; margin-left: 8px; }
+.week-card { padding: 0; overflow: hidden; }
+.week-card-now { box-shadow: 0 0 0 2px var(--primary) inset; }
+.week-row { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 10px; padding: 11px 16px; color: var(--text); border-top: 1px solid #eef1f5; }
+.week-row:first-child { border-top: none; }
+a.week-row:hover { background: #f7f9fc; }
+.week-date { font-weight: 700; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.week-period { display: flex; flex-direction: column; font-size: .9rem; min-width: 0; }
+.week-row .badge { min-width: 44px; text-align: center; }
+.chip-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.chip { height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid #d5dbe6; background: #fff; color: var(--text); font: inherit; font-size: .85rem; cursor: pointer; }
+.chip.on { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 700; }

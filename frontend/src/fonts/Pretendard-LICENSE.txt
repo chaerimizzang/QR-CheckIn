@@ -1,0 +1,7 @@
+Pretendard (https://github.com/orioncactus/pretendard)
+Copyright (c) 2021, Kil Hyung-jin
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+License text: https://openfontlicense.org/open-font-license-official-text/
+
+PretendardVariable.subset.woff2 is a subset of PretendardVariable.woff2
+(KS X 1001 Hangul + Latin, made with fontTools pyftsubset) for this project.

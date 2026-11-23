@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { del, get, post, put } from '../../api'
 import { Empty, ErrorBox, HeroTiles, Layout, Loading, SessionBadge } from '../../components/ui'
+import WeekList, { groupByWeek } from '../../components/WeekList'
 import { fmtDateTime, fmtPeriod, fmtSchedules, nextHourLocal, WARNING } from '../../util'
 import StudentCsvTools from '../../components/StudentCsvTools'
 import AttendanceStatistics from './AttendanceStatistics'
-import Icon from '../../components/Icon'
 
 /** A-03 교육 상세: 회차 목록 + 수강생 목록 */
 export default function CourseDetail() {
@@ -109,7 +109,7 @@ export default function CourseDetail() {
       subtitle={`${fmtSchedules(course.schedules) || '시간표 미정'} · ${course.room || '강의실 미정'} · 수강생 ${course.studentCount}명`}
       hero={sessions && (
         <HeroTiles items={[
-          { label: '전체 회차', value: `${sessions.filter((x) => x.status !== 'CANCELED').length}회` },
+          { label: `전체 · ${groupByWeek(sessions, (x) => new Date(x.scheduledAt), course.startDate).at(-1)?.week ?? 0}주`, value: `${sessions.filter((x) => x.status !== 'CANCELED').length}회` },
           { label: '마감', value: `${sessions.filter((x) => x.status === 'CLOSED').length}회` },
           { label: '휴강', value: `${sessions.filter((x) => x.status === 'CANCELED').length}회` },
         ]} />
@@ -140,7 +140,7 @@ export default function CourseDetail() {
       )}
 
       <div className="tabs">
-  <button className={tab === 'sessions' ? 'on' : ''} onClick={() => setTab('sessions')}>회차 {sessions?.length ?? ''}</button>
+  <button className={tab === 'sessions' ? 'on' : ''} onClick={() => setTab('sessions')}>수업 날짜 {sessions?.length ?? ''}</button>
   <button className={tab === 'students' ? 'on' : ''} onClick={() => setTab('students')}>수강생 {students?.length ?? ''}</button>
   <button className={tab === 'statistics' ? 'on' : ''} onClick={() => setTab('statistics')}>출석 통계</button>
 </div>
@@ -149,25 +149,18 @@ export default function CourseDetail() {
         <>
           {!course.finalizedAt && <form className="card row-form" onSubmit={addSession}>
             <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} required />
-            <button className="btn btn-primary">+ 회차 추가</button>
+            <button className="btn btn-primary">+ 날짜 추가</button>
           </form>}
-          {!sessions ? <Loading /> : sessions.length === 0 ? <Empty>회차를 추가해 주세요.</Empty> : (
-            <div className="list">
-              {sessions.map((s) => (
-                <Link key={s.id} to={`/admin/sessions/${s.id}`} className="card list-item">
-                  <div>
-                    <div className="item-title">{fmtDateTime(s.scheduledAt)} <SessionBadge status={s.status} /></div>
-                    <div className="muted small">
-                      {s.sessionNo}회차
-                      {s.status === 'CANCELED'
-                        ? (s.cancelReason && ` · ${s.cancelReason}`)
-                        : <> · 반경 {s.radiusM}m · {s.checkinMinutes}분{s.latitude == null && <span className="warn"> · 장소 미지정</span>}</>}
-                    </div>
-                  </div>
-                  <Icon name="chevron" size={20} className="chevron" />
-                </Link>
-              ))}
-            </div>
+          {!sessions ? <Loading /> : sessions.length === 0 ? <Empty>수업 날짜를 추가해 주세요.</Empty> : (
+            <WeekList weeks={groupByWeek(sessions, (s) => new Date(s.scheduledAt), course.startDate)} row={({ item: s, date }) => ({
+              key: s.id,
+              to: `/admin/sessions/${s.id}`,
+              // 휴강이면 사유, 아직 안 한 수업이면 시작 시간(장소 미지정 표시). 출석 인원은 적지 않는다
+              sub: s.status === 'CANCELED' ? (s.cancelReason || null)
+                : s.status === 'SCHEDULED' ? <>{`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} 시작`}{s.latitude == null && <span className="warn"> · 장소 미지정</span>}</>
+                : null,
+              right: <SessionBadge status={s.status} />,
+            })} />
           )}
         </>
       )}

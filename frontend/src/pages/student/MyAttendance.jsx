@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { get } from '../../api'
 import { Empty, ErrorBox, HeroStats, Layout, Loading } from '../../components/ui'
-import { SESSION_LABEL, STATUS_LABEL, WARNING } from '../../util'
+import WeekList, { groupByWeek } from '../../components/WeekList'
+import { SESSION_LABEL, STATUS_LABEL, WARNING, fmtSchedules } from '../../util'
 
 /** 출석 인정을 신청할 수 있는 회차: 결석·지각이거나, 아직 열리지 않은(미리 신청) 회차 */
 /** 날짜가 지났는데 출석을 열지 않은 회차(진행하지 않은 수업) */
@@ -13,6 +14,7 @@ const canRequest = (s) => !canceled(s) &&
 
 /** S-04 내 출결 */
 export default function MyAttendance() {
+  const [onlyIssues, setOnlyIssues] = useState(false) // [결석·지각만]
   const { courseId } = useParams()
   const [params] = useSearchParams()
   const from = params.get('from')
@@ -21,6 +23,12 @@ export default function MyAttendance() {
   const [error, setError] = useState(null)
   const [warning, setWarning] = useState(null)
   useEffect(() => { get(`/me/attendances?courseId=${courseId}`).then(setData).catch(setError) }, [courseId])
+  // 주차는 교육 시작일(개강일) 기준 — 교수 화면과 같은 번호가 되게
+  const [course, setCourse] = useState(null)
+  useEffect(() => {
+    get('/courses').then((cs) => setCourse(cs.find((c) => String(c.id) === String(courseId)) ?? null)).catch(() => {})
+  }, [courseId])
+  const startDate = course?.startDate ?? null
   // 결석 경고(F 기준) — 프로필의 수업별 요약에서 이 수업 것만 쓴다
   useEffect(() => {
     get('/me/profile').then((p) => setWarning(p.courses.find((c) => String(c.courseId) === String(courseId)) ?? null))
@@ -56,12 +64,15 @@ export default function MyAttendance() {
     </>
   )
 
-  const md = (iso) => { const d = new Date(iso); return { m: `${d.getMonth() + 1}월`, d: d.getDate() } }
+  const shown = data ? data.sessions.filter((s) => !onlyIssues || s.status === 'ABSENT' || s.status === 'LATE') : []
+  const weeks = data ? groupByWeek(shown, (s) => new Date(s.scheduledAt),
+    startDate ?? (data.sessions.length ? data.sessions.map((s) => s.scheduledAt).sort()[0].slice(0, 10) : null)) : []
+
   const hm = (iso) => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
-  const wd = (iso) => '일월화수목금토'[new Date(iso).getDay()]
 
   return (
-    <Layout back={back} title={data?.courseTitle} hero={hero}>
+    <Layout back={back} title={data?.courseTitle}
+      subtitle={course ? [fmtSchedules(course.schedules), course.ownerName].filter(Boolean).join(' · ') : undefined} hero={hero}>
       <ErrorBox error={error} />
       {!data ? <Loading /> : (
         <>
@@ -71,30 +82,21 @@ export default function MyAttendance() {
               <span className="small"> · 사유가 있었다면 [출석 인정 신청]을 해 보세요</span>
             </div>
           )}
-          <div className="list-head"><h2>날짜별 출결</h2><span className="muted small">날짜순</span></div>
-          {data.sessions.length === 0 ? <Empty>아직 수업 날짜가 없어요.</Empty> : (
-            <div className="list">
-              {[...data.sessions].sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt)).map((s) => (
-                <div key={s.sessionId} className="card date-row">
-                  <div className="date-box"><span>{md(s.scheduledAt).m}</span><b>{md(s.scheduledAt).d}</b></div>
-                  <div className="date-main">
-                    <div className="t">{wd(s.scheduledAt)} {hm(s.scheduledAt)}</div>
-                    {canRequest(s) ? (
-                      <Link className="small" to={`/requests?new=1&course=${courseId}&session=${s.sessionId}`}>출석 인정 신청</Link>
-                    ) : (
-                      <div className="muted small">
-                        {canceled(s) ? (s.cancelReason || '휴강')
-                          : s.checkedAt ? `${hm(s.checkedAt)} 체크인`
-                          : s.status ? '체크인 없음' : ''}
-                      </div>
-                    )}
-                  </div>
-                  {s.status && !canceled(s)
-                    ? <span className={`badge badge-lg badge-${s.status.toLowerCase()}`}>{STATUS_LABEL[s.status]}</span>
-                    : <span className={`badge badge-lg badge-s-${s.sessionStatus.toLowerCase()}`}>{neverHeld(s) ? '미진행' : SESSION_LABEL[s.sessionStatus]}</span>}
-                </div>
-              ))}
-            </div>
+          <div className="chip-row">
+            <button type="button" className={`chip${onlyIssues ? '' : ' on'}`} onClick={() => setOnlyIssues(false)}>주차별</button>
+            <button type="button" className={`chip${onlyIssues ? ' on' : ''}`} onClick={() => setOnlyIssues(true)}>결석·지각만</button>
+          </div>
+          {data.sessions.length === 0 ? <Empty>아직 수업 날짜가 없어요.</Empty>
+            : weeks.length === 0 ? <Empty>결석·지각한 날이 없어요.</Empty> : (
+            <WeekList weeks={weeks} row={({ item: s }) => ({
+              key: s.sessionId,
+              sub: canceled(s) ? (s.cancelReason || null)
+                : canRequest(s) ? <Link to={`/requests?new=1&course=${courseId}&session=${s.sessionId}`}>출석 인정 신청</Link>
+                : s.status === 'LATE' && s.checkedAt ? `${hm(s.checkedAt)} 체크인` : null,
+              right: s.status && !canceled(s)
+                ? <span className={`badge badge-${s.status.toLowerCase()}`}>{STATUS_LABEL[s.status]}</span>
+                : <span className={`badge badge-s-${s.sessionStatus.toLowerCase()}`}>{neverHeld(s) ? '미진행' : SESSION_LABEL[s.sessionStatus]}</span>,
+            })} />
           )}
         </>
       )}

@@ -247,7 +247,6 @@ export default function SessionDetail() {
 
   return (
     <Layout back={`/admin/courses/${s.courseId}`} title={<>{fmtDateTime(s.scheduledAt)} <SessionBadge status={s.status} /></>}
-      subtitle={`${s.sessionNo}회차`}
       hero={roster && s.status !== 'SCHEDULED' && s.status !== 'CANCELED' && (
         <HeroStats items={[
           { label: '출석', value: roster.summary.present },
