@@ -34,12 +34,22 @@ class AssistantEvidence {
 
     static final int MAX_FACTS = 8;
     static final int MAX_ACTIONS = 4;
-    private static final Pattern NUMBER = Pattern.compile("\\d+");
+    /** 정수 또는 소수(66.7 처럼 반올림한 출석률도 대조한다) */
+    private static final Pattern NUMBER = Pattern.compile("\\d+(?:\\.\\d+)?");
+    /**
+     * 날짜·시각 표현(11월 24일, 11/24, 2026-11-24, 13:00, 오후 1시 30분)은 숫자 대조에서 뺀다.
+     * 날짜는 오늘 기준으로 바뀌는 값이라 도구 결과와 글자가 다르게 나오기 쉽고, 실제 회차는 근거 카드가 보여 준다.
+     * 출결 횟수·비율 같은 숫자만 엄격하게 대조한다.
+     */
+    private static final Pattern DATE_TIME = Pattern.compile(
+            "\\d{4}-\\d{1,2}-\\d{1,2}|\\d{4}\\s*년|\\d{1,2}\\s*월\\s*\\d{1,2}\\s*일|\\d{1,2}\\s*월|\\d{1,2}\\s*일\\s*\\(|\\d{1,2}/\\d{1,2}"
+                    + "|\\d{1,2}:\\d{2}|\\d{1,2}\\s*시(\\s*\\d{1,2}\\s*분)?|\\d{1,2}\\s*분");
     private static final DateTimeFormatter HM = DateTimeFormatter.ofPattern("HH:mm");
 
     private final Map<String, Fact> facts = new LinkedHashMap<>();
     private final Map<String, Action> actions = new LinkedHashMap<>();
     private final Set<Long> allowedNumbers = new HashSet<>();
+    private final List<Double> allowedDecimals = new ArrayList<>();
     /** 기간 조회에서 찾은 회차 — 신청 버튼을 이 회차로 좁힌다 */
     private final Set<Long> sessionsInRange = new HashSet<>();
     private int successfulTools;
@@ -52,7 +62,16 @@ class AssistantEvidence {
         Matcher m = NUMBER.matcher(text);
         while (m.find()) {
             String d = m.group();
-            if (d.length() <= 12) {
+            if (d.length() > 24) {
+                continue;
+            }
+            if (d.contains(".")) {
+                // 66.66666666666667 → 66.7·67·66 모두 허용(반올림·버림)
+                double v = Double.parseDouble(d);
+                allowedDecimals.add(v);
+                allowedNumbers.add((long) Math.floor(v));
+                allowedNumbers.add(Math.round(v));
+            } else if (d.length() <= 12) {
                 allowedNumbers.add(Long.parseLong(d));
             }
         }
@@ -87,14 +106,29 @@ class AssistantEvidence {
         if (answer == null) {
             return unknown;
         }
-        Matcher m = NUMBER.matcher(answer);
+        Matcher m = NUMBER.matcher(DATE_TIME.matcher(answer).replaceAll(" "));
         while (m.find()) {
             String d = m.group();
-            if (d.length() > 12 || !allowedNumbers.contains(Long.parseLong(d))) {
+            if (!isAllowed(d)) {
                 unknown.add(d);
             }
         }
         return unknown;
+    }
+
+    private boolean isAllowed(String d) {
+        if (d.length() > 24) {
+            return false;
+        }
+        if (!d.contains(".")) {
+            return d.length() <= 12 && allowedNumbers.contains(Long.parseLong(d));
+        }
+        double v = Double.parseDouble(d);
+        if (v == Math.rint(v) && allowedNumbers.contains((long) v)) {
+            return true;
+        }
+        // 소수 첫째·둘째 자리까지 반올림한 값이면 허용
+        return allowedDecimals.stream().anyMatch(a -> Math.abs(a - v) < 0.051);
     }
 
     List<Fact> facts() {

@@ -194,7 +194,8 @@ class AssistantServiceTest {
         ask("{\"message\":\"자료구조 결석 몇 번이야?\"}", kim)
                 .andExpect(jsonPath("$.answer").value(AssistantService.SAFE_FALLBACK))
                 .andExpect(jsonPath("$.facts[0].label").value("자료구조"));
-        assertThat(fake.withTools.get(2)).isFalse();
+        // 다시 요청할 때도 도구를 쓸 수 있다(짐작 대신 확인하도록)
+        assertThat(fake.withTools.get(2)).isTrue();
 
         // 다시 요청해서 맞게 고치면 고친 답을 쓴다
         fake.reset();
@@ -203,6 +204,23 @@ class AssistantServiceTest {
         fake.script.add(text("자료구조 결석은 1회, 지각은 2회예요."));
         ask("{\"message\":\"자료구조 결석 몇 번이야?\"}", kim)
                 .andExpect(jsonPath("$.answer").value("자료구조 결석은 1회, 지각은 2회예요."));
+    }
+
+    @Test
+    void 날짜는_숫자_대조에서_빼고_도구_없이_지어낸_숫자는_근거_없음_문장() throws Exception {
+        fake.script.add(text("네, 11월 24일(화) 13:00에 자료구조 수업이 있어요."));
+        ask("{\"message\":\"내일 수업 있어?\"}", kim)
+                .andExpect(jsonPath("$.answer").value("네, 11월 24일(화) 13:00에 자료구조 수업이 있어요."));
+
+        fake.reset();
+        fake.script.add(text("이번 주 수업은 33개예요."));
+        fake.script.add(text("이번 주 수업은 44개예요."));
+        ask("{\"message\":\"이번 주 수업 몇 개야?\"}", kim)
+                .andExpect(jsonPath("$.answer").value(AssistantService.NO_FACTS_FALLBACK))
+                .andExpect(jsonPath("$.actions[0].path").value("/attendance"));
+        // 고쳐 달라는 요청에 짐작하지 말고 도구로 확인하라는 말이 들어간다
+        ArrayNode retry = fake.requests.get(1);
+        assertThat(last(retry).path("content").asText()).contains("도구로 확인");
     }
 
     @Test

@@ -43,6 +43,7 @@ public class AssistantService {
     /** 추천 질문을 LLM 없이 서버가 바로 답함(preset-direct) */
     static final String SOURCE_PRESET = "PRESET";
     static final String SAFE_FALLBACK = "숫자를 정확히 설명하지 못했어요. 서버에서 계산한 정확한 값은 아래 근거 카드를 봐 주세요.";
+    static final String NO_FACTS_FALLBACK = "정확한 정보를 확인하지 못했어요. 질문을 조금 더 구체적으로 해 주시거나 출결 현황·시간표 화면에서 확인해 주세요.";
 
     private final LlmClient llm;
     private final AssistantToolExecutor executor;
@@ -116,11 +117,14 @@ public class AssistantService {
         ev.allowDate(now);
         ev.allowFrom(req.message());
 
-        // 내 수업 목록을 처음부터 넣어 두면 "자료구조에서…" 같은 질문에서 getMyCourses 왕복 한 번이 줄어든다
+        // 내 수업 목록(courseId·이름·학기)을 처음부터 넣어 두면 "자료구조에서…" 같은 질문에서 왕복 한 번이 줄어든다.
+        // 주간 시간표는 넣지 않는다 — 특정 날짜에 수업이 있는지는 getMyUpcomingSessions 로 실제 회차를 확인하게
         String coursesJson;
         try {
-            coursesJson = om.writeValueAsString(tools.myCourses(user, false).courses());
-        } catch (JsonProcessingException e) {
+            ArrayNode courses = om.valueToTree(tools.myCourses(user, false).courses());
+            courses.forEach(c -> ((ObjectNode) c).remove("schedules"));
+            coursesJson = om.writeValueAsString(courses);
+        } catch (JsonProcessingException | IllegalArgumentException e) {
             coursesJson = "[]";
         }
         ev.allowFrom(coursesJson);
@@ -136,11 +140,33 @@ public class AssistantService {
         }
         messages.add(message("user", req.message()));
 
-        int toolCalls = 0;
-        String answer = null;
+        int[] toolCalls = {0};
+        String answer = runLoop(messages, user, ev, toolCalls);
+
+        List<String> unknown = ev.unknownNumbers(answer);
+        if (!unknown.isEmpty()) {
+            log.info("[AI 도우미] 도구 결과에 없는 숫자 {} → 다시 요청", unknown);
+            messages.add(message("user", "방금 답변의 숫자 " + String.join(", ", unknown)
+                    + "은(는) 도구 결과에 없어요. 짐작하지 말고 필요한 도구로 확인한 뒤, 도구 결과에 있는 숫자만 써서 다시 답해 주세요."));
+            String retry = runLoop(messages, user, ev, toolCalls);
+            if (ev.unknownNumbers(retry).isEmpty()) {
+                answer = retry;
+            } else {
+                log.info("[AI 도우미] 다시 요청해도 맞지 않는 숫자 {} → 안전한 문장", ev.unknownNumbers(retry));
+                answer = ev.facts().isEmpty() ? NO_FACTS_FALLBACK : SAFE_FALLBACK;
+            }
+        }
+
+        answer = clean(answer);
+        boolean clarification = ev.successfulTools() == 0 && answer.contains("?");
+        return new AskResponse(answer, SOURCE_AI, clarification, ev.facts(), ev.actions(), now, tools.policy());
+    }
+
+    /** LLM 과 도구를 주고받아 최종 답변 문장을 얻는다. toolCalls[0] 은 이번 질문에서 쓴 도구 수(다시 요청할 때도 이어서 센다) */
+    private String runLoop(ArrayNode messages, AuthUser user, AssistantEvidence ev, int[] toolCalls) throws LlmException {
         // 도구 호출 묶음이 계속 와도 끝나도록 바퀴 수를 제한한다
-        for (int round = 0; round <= maxToolCalls + 1 && answer == null; round++) {
-            boolean toolsAllowed = toolCalls < maxToolCalls;
+        for (int round = 0; round <= maxToolCalls + 1; round++) {
+            boolean toolsAllowed = toolCalls[0] < maxToolCalls;
             JsonNode msg = llm.chat(messages, toolsAllowed ? executor.definitions() : null);
             JsonNode calls = msg.path("tool_calls");
             if (toolsAllowed && calls.isArray() && !calls.isEmpty()) {
@@ -152,10 +178,10 @@ public class AssistantService {
                     String id = call.path("id").asText("");
                     String name = call.path("function").path("name").asText("");
                     String args = call.path("function").path("arguments").asText("");
-                    String content = toolCalls < maxToolCalls
+                    String content = toolCalls[0] < maxToolCalls
                             ? runTool(name, args, user, ev)
                             : error("이번 질문에서 쓸 수 있는 도구 횟수를 넘었어요");
-                    toolCalls++;
+                    toolCalls[0]++;
                     ObjectNode toolMsg = om.createObjectNode();
                     toolMsg.put("role", "tool");
                     toolMsg.put("tool_call_id", id);
@@ -168,25 +194,10 @@ public class AssistantService {
             if (text.isBlank()) {
                 throw new LlmException(LlmException.Kind.FAILED, "빈 답변");
             }
-            answer = text;
             messages.add(message("assistant", text));
+            return text;
         }
-        if (answer == null) {
-            throw new LlmException(LlmException.Kind.FAILED, "도구 호출이 끝나지 않았어요");
-        }
-
-        List<String> unknown = ev.unknownNumbers(answer);
-        if (!unknown.isEmpty()) {
-            log.info("[AI 도우미] 도구 결과에 없는 숫자 {} → 다시 요청", unknown);
-            messages.add(message("user", "방금 답변의 숫자 " + String.join(", ", unknown)
-                    + "은(는) 도구 결과에 없어요. 도구 결과에 있는 숫자만 써서 같은 내용을 다시 답해 주세요."));
-            String retry = textOf(llm.chat(messages, null));
-            answer = !retry.isBlank() && ev.unknownNumbers(retry).isEmpty() ? retry : SAFE_FALLBACK;
-        }
-
-        answer = clean(answer);
-        boolean clarification = ev.successfulTools() == 0 && answer.contains("?");
-        return new AskResponse(answer, SOURCE_AI, clarification, ev.facts(), ev.actions(), now, tools.policy());
+        throw new LlmException(LlmException.Kind.FAILED, "도구 호출이 끝나지 않았어요");
     }
 
     /** 도구 실행 결과를 JSON 문자열로. 실패는 {"error": 이유}로 LLM 에 알려 준다(학생 데이터는 담지 않음) */
