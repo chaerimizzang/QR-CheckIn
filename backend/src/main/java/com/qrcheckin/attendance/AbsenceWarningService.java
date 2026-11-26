@@ -21,7 +21,7 @@ import com.qrcheckin.push.PushService;
 
 /**
  * 결석 경고 알림. 주기적으로(기본 2분) 교육마다 수강생의 F 기준 단계를 계산해서,
- * 단계가 올라가면(주의 → 위험 → F) 학생에게 알리고, 위험·F 는 교수에게도 알린다.
+ * 단계가 올라가면(주의 → 위험 → F) 학생에게만 알린다. 교수는 수강생 출결부의 주의·위험 표시로 확인한다.
  * 단계가 내려가면(출석 인정 승인 등) 기록만 낮추고 알리지 않는다.
  */
 @Service
@@ -87,11 +87,6 @@ public class AbsenceWarningService {
         out.add(new Outgoing(r.userId(), new PushMessage(
                 (level == Level.FAIL ? "F 기준 초과 " : "결석 경고 ") + "[" + course.getTitle() + "]", detail,
                 "/student/courses/" + course.getId() + "?from=attendance", "warning-" + course.getId())));
-        if (level == Level.DANGER || level == Level.FAIL) {
-            out.add(new Outgoing(course.getOwner().getId(), new PushMessage(
-                    "결석 위험 학생 [" + course.getTitle() + "]", r.name() + " · " + detail,
-                    "/admin/courses/" + course.getId(), "warning-" + course.getId() + "-" + r.userId())));
-        }
         return out;
     }
 }

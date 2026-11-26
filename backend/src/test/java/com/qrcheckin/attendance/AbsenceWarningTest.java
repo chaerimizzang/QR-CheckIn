@@ -91,7 +91,7 @@ class AbsenceWarningTest {
     }
 
     @Test
-    void 결석이_쌓이면_학생과_교수에게_한번씩_알린다() throws Exception {
+    void 결석이_쌓이면_학생에게만_한번씩_알린다() throws Exception {
         String prof = login("wprof@t.com", "ADMIN");
         String kim = login("wkim@t.com", "STUDENT");
         long kimId = idOf(call(get("/api/v1/me"), kim, null));
@@ -109,11 +109,10 @@ class AbsenceWarningTest {
         warnings.checkAll();
         assertThat(transport.endpoints).isEmpty();
 
-        // 1회차 결석(마감 때 자동) → 허용 1회에 닿음 = 위험 → 학생·교수 둘 다
+        // 1회차 결석(마감 때 자동) → 허용 1회에 닿음 = 위험 → 학생에게만(교수는 출결부 표시로 확인)
         runAndClose(prof, s[0]);
         warnings.checkAll();
-        assertThat(transport.endpoints).containsExactlyInAnyOrder(
-                "https://fcm.googleapis.com/fcm/send/w-kim", "https://fcm.googleapis.com/fcm/send/w-prof");
+        assertThat(transport.endpoints).containsExactly("https://fcm.googleapis.com/fcm/send/w-kim");
         call(get("/api/v1/me/profile"), kim, null)
                 .andExpect(jsonPath("$.courses[0].warningLevel").value("DANGER"))
                 .andExpect(jsonPath("$.courses[0].remainingAbsences").value(0));
@@ -127,10 +126,10 @@ class AbsenceWarningTest {
         warnings.checkAll();
         assertThat(transport.endpoints).isEmpty();
 
-        // 2회차도 결석 → F 기준 초과 → 다시 알림
+        // 2회차도 결석 → F 기준 초과 → 학생에게 다시 알림
         runAndClose(prof, s[1]);
         warnings.checkAll();
-        assertThat(transport.endpoints).hasSize(2);
+        assertThat(transport.endpoints).containsExactly("https://fcm.googleapis.com/fcm/send/w-kim");
 
         // 출석으로 바꾸면(출석 인정 등) 단계가 내려가고 알림은 없다
         transport.endpoints.clear();
