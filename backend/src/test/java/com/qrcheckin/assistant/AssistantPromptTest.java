@@ -2,6 +2,7 @@ package com.qrcheckin.assistant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,16 @@ class AssistantPromptTest {
                 .contains("출석률(%)")
                 .contains("\"title\":\"데이터베이스 100%\"")
                 .contains("수업의 2/3 이상 출석해야 해요(결석이 1/3을 넘으면 F 기준)")
-                .doesNotContain("{TODAY}").doesNotContain("{SUMMARY}").doesNotContain("{FAIL_RULE}");
+                .doesNotContain("{TODAY}").doesNotContain("{CALENDAR}").doesNotContain("{SUMMARY}").doesNotContain("{FAIL_RULE}");
+    }
+
+    @Test
+    void 이번주_다음주_범위와_요일을_미리_계산해_넣는다() {
+        // 리허설에서 LLM 이 "다음 주"를 12/2~12/8 로, 12/3(목)을 화요일로 잘못 계산했다
+        String c = AssistantPrompt.calendar(LocalDate.of(2026, 11, 26)); // 목요일
+        assertThat(c)
+                .contains("이번 주: 2026-11-23 ~ 2026-11-29")
+                .contains("다음 주: 2026-11-30 ~ 2026-12-06")
+                .contains("12/1(화)").contains("12/3(목)").contains("11/30(월)");
     }
 }

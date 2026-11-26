@@ -35,6 +35,13 @@ export default function MyAttendance() {
       .catch(() => {})
   }, [courseId])
 
+  // 이미 신청해 처리를 기다리는 회차는 [출석 인정 신청] 대신 '신청 대기'로 보여 준다
+  const [pendingIds, setPendingIds] = useState(new Set())
+  useEffect(() => {
+    get('/me/requests').then((rs) => setPendingIds(new Set(rs.filter((r) => r.status === 'PENDING').map((r) => r.sessionId))))
+      .catch(() => {})
+  }, [courseId])
+
   const count = (st) => data?.sessions.filter((s) => !canceled(s) && s.status === st).length ?? 0
 
   const rate = warning?.attendanceRate
@@ -91,6 +98,7 @@ export default function MyAttendance() {
             <WeekList weeks={weeks} row={({ item: s }) => ({
               key: s.sessionId,
               sub: canceled(s) ? (s.cancelReason || null)
+                : pendingIds.has(s.sessionId) ? <Link to="/requests">출석 인정 신청 대기 중</Link>
                 : canRequest(s) ? <Link to={`/requests?new=1&course=${courseId}&session=${s.sessionId}`}>출석 인정 신청</Link>
                 : s.status === 'LATE' && s.checkedAt ? `${hm(s.checkedAt)} 체크인` : null,
               right: s.status && !canceled(s)

@@ -1,6 +1,9 @@
 package com.qrcheckin.assistant;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.time.format.TextStyle;
 import java.util.Locale;
 
@@ -20,6 +23,7 @@ final class AssistantPrompt {
         return """
                 너는 QR-CheckIn 출결 서비스의 학생용 'AI 출결 도우미'야. 로그인한 학생 본인의 출결만 다룬다.
                 오늘은 {TODAY}, 지금 시각은 {TIME} (Asia/Seoul)이다.
+                {CALENDAR}
 
                 [사실과 숫자]
                 - 출결 숫자(횟수, 비율, 날짜, 시각)는 반드시 아래 [내 출결 요약]이나 도구 결과에 있는 값만 쓴다. 기억이나 짐작으로 말하지 않는다.
@@ -47,7 +51,8 @@ final class AssistantPrompt {
                 - 필요한 도구가 여러 개면 한 번에 함께 요청한다(예: 수업별 getMyRequestOptions 를 동시에).
                 - 특정 날짜·기간에 수업이 있는지, 몇 시인지는 짐작하지 말고 반드시 getMyUpcomingSessions 로 실제 회차를 확인한다("내일 수업 있어?"도 마찬가지).
                 - getMyUpcomingSessions 결과에서 canceled=true 인 회차는 휴강이다. "수업 있어?"에는 그 수업이 휴강이라고 분명히 말하고(사유가 있으면 함께), 휴강 회차는 출석 인정을 신청할 필요가 없다고 안내한다. 휴강은 전체 회차에서 빠져 F 기준 계산에도 들어가지 않는다.
-                - "이번 주", "다음 주", "모레" 같은 날짜는 오늘 기준 실제 날짜(YYYY-MM-DD)로 바꿔 getMyUpcomingSessions 에 넣는다. 한 주는 월요일~일요일이다. 날짜를 정할 수 없으면 되묻는다.
+                - "이번 주", "다음 주", "모레" 같은 날짜는 위 [날짜표]에 적힌 날짜(YYYY-MM-DD)를 그대로 getMyUpcomingSessions 에 넣는다. 날짜와 요일을 직접 계산하지 않는다. 날짜를 정할 수 없으면 되묻는다.
+                - 답변에 쓰는 요일은 [날짜표]에서 그 날짜의 요일을 그대로 가져온다. 도구 결과의 날짜를 바꾸거나 요일을 짐작하지 않는다.
                 - 예비군·병원 등으로 빠지는 날의 신청 안내는 getMyUpcomingSessions 로 그날 수업을 찾고, 수업마다 getMyRequestOptions 로 신청 가능 여부를 확인한다.
                 - "지각 한 번", "한 번 빠지면"처럼 지각인지 결석인지, 몇 번인지 모호하면 되묻는다.
 
@@ -68,7 +73,27 @@ final class AssistantPrompt {
                 // formatted() 를 쓰지 않는다 — 지시문의 '%' 글자(출석률(%))를 형식 기호로 읽어 예외가 났다
                 .replace("{TODAY}", today)
                 .replace("{TIME}", time)
+                .replace("{CALENDAR}", calendar(now.toLocalDate()))
                 .replace("{FAIL_RULE}", failRule)
                 .replace("{SUMMARY}", summaryJson);
+    }
+
+    /**
+     * LLM 이 요일·주 범위를 틀리게 계산하는 일이 있어(시연 리허설: 12/3(목)을 화요일로) 서버가 미리 계산해 준다.
+     * 이번 주·다음 주(월~일) 범위와 지난주 월요일부터 3주 뒤 일요일까지 날짜별 요일.
+     */
+    static String calendar(LocalDate today) {
+        LocalDate thisMonday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate nextMonday = thisMonday.plusWeeks(1);
+        StringBuilder sb = new StringBuilder("[날짜표] 한 주는 월요일~일요일이다.\n");
+        sb.append("- 이번 주: ").append(thisMonday).append(" ~ ").append(thisMonday.plusDays(6)).append("\n");
+        sb.append("- 다음 주: ").append(nextMonday).append(" ~ ").append(nextMonday.plusDays(6)).append("\n");
+        sb.append("- 날짜별 요일:");
+        for (LocalDate d = thisMonday.minusWeeks(1); !d.isAfter(thisMonday.plusWeeks(3).plusDays(6)); d = d.plusDays(1)) {
+            sb.append(d.getDayOfWeek() == DayOfWeek.MONDAY ? "\n  " : " ")
+              .append(d.getMonthValue()).append('/').append(d.getDayOfMonth())
+              .append('(').append(d.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.KOREAN)).append(')');
+        }
+        return sb.toString();
     }
 }

@@ -132,7 +132,7 @@ class ClassReminderTest {
         assertThat(toKim.headers().get("Authorization")).startsWith("vapid t=").contains(", k=");
         JsonNode msg = om.readTree(decrypt(kimPhone, toKim.body()));
         assertThat(msg.get("title").asText()).isEqualTo("다음 수업이 있어요 [데이터베이스]");
-        assertThat(msg.get("body").asText()).isEqualTo("1회차 · 13:00 시작 (10분 뒤)");
+        assertThat(msg.get("body").asText()).isEqualTo("11/20(금) 13:00 시작 (10분 뒤)");
         assertThat(msg.get("url").asText()).isEqualTo("/student/courses/" + course);
         JsonNode toProf = om.readTree(decrypt(profPhone, sentTo(profPhone.endpoint()).body()));
         assertThat(toProf.get("url").asText()).isEqualTo("/admin/sessions/" + soon);

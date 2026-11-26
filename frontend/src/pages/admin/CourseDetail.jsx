@@ -226,7 +226,7 @@ export default function CourseDetail() {
                         <td>
                           {WARNING[rate?.warningLevel]
                             ? <span className={`warn-tag ${WARNING[rate.warningLevel].cls}`}>{WARNING[rate.warningLevel].label}</span>
-                            : rate?.remainingAbsences != null ? <span className="muted small">F까지 결석 {rate.remainingAbsences + 1}회</span> : '-'}
+                            : rate?.remainingAbsences != null ? <span className="muted small">남은 결석 {Math.max(rate.remainingAbsences, 0)}회</span> : '-'}
                         </td>
 
                         <td className="right">
