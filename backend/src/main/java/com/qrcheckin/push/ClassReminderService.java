@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,7 +25,8 @@ import com.qrcheckin.session.SessionStatus;
 @Service
 public class ClassReminderService {
 
-    private static final DateTimeFormatter HM = DateTimeFormatter.ofPattern("HH:mm");
+    /** 화면(주차·날짜 표시)과 맞춰 회차 번호 대신 날짜로 알린다: "12/3(목) 13:00 시작 (10분 뒤)" */
+    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("M/d(E) HH:mm", Locale.KOREAN);
 
     private final ClassSessionRepository sessions;
     private final EnrollmentRepository enrollments;
@@ -64,7 +66,7 @@ public class ClassReminderService {
             s.markReminded(now);
             String title = s.getCourse().getTitle();
             long minutes = Math.max(1, (Duration.between(now, s.getScheduledAt()).getSeconds() + 59) / 60);
-            String when = s.getSessionNo() + "회차 · " + s.getScheduledAt().format(HM) + " 시작 (" + minutes + "분 뒤)";
+            String when = s.getScheduledAt().format(DAY) + " 시작 (" + minutes + "분 뒤)";
             String tag = "class-" + s.getId();
 
             List<Long> students = enrollments.findByCourseId(s.getCourse().getId()).stream()
